@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 import embeds from 'astro-embed/integration';
 import expressiveCode from 'astro-expressive-code';
 import mermaid from 'astro-mermaid';
+import remarkGithubAlerts from './src/plugins/remark-github-alerts.js';
 
 // https://astro.build/config
 export default defineConfig({
@@ -62,10 +63,17 @@ export default defineConfig({
     }),
     embeds(),
     expressiveCode({
-      themes: ['dracula'],
+      defaultProps: {
+        wrap: true,
+      },
+      themes: ['dracula', 'github-light'],
     }),
     mdx(),
   ],
+
+  markdown: {
+    remarkPlugins: [remarkGithubAlerts],
+  },
 
   vite: {
     plugins: [tailwindcss()],
@@ -74,4 +82,3 @@ export default defineConfig({
     },
   },
 });
-
