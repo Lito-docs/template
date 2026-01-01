@@ -4,21 +4,22 @@ import { createLink } from '../utils/url';
 
 const config = await getConfigFile();
 const { footer } = config;
+const currentYear = new Date().getFullYear();
 ---
 
-<footer class="border-t border-border mt-16 py-12 px-8 bg-muted">
-  <div class="max-w-4xl mx-auto">
+<footer class="mt-16  py-12  bg-background">
+  <div class="w-full px-6 mx-auto">
     {footer.links && footer.links.length > 0 && (
       <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
         {footer.links.map((section) => (
           <div>
-            <h4 class="font-semibold text-foreground mb-4 text-sm">{section.title}</h4>
+            <h4 class="font-semibold text-foreground mb-4 text-sm uppercase tracking-wide">{section.title}</h4>
             <ul class="space-y-3 list-none m-0 p-0">
               {section.items.map((item) => (
                 <li>
                   <a 
                     href={createLink(item.href)}
-                    class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    class="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
                   >
                     {item.label}
                   </a>
@@ -30,8 +31,25 @@ const { footer } = config;
       </div>
     )}
     
-    <div class="text-center text-sm text-muted-foreground border-t border-border pt-8">
-      <p class="m-0">Built with <span class="text-foreground font-medium">Astro Docs CLI</span> • {config.metadata.version}</p>
+    <div class="border-t border-border pt-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="text-sm text-muted-foreground">
+          <p class="m-0 flex flex-wrap items-center gap-2">
+            <span>© {currentYear}</span>
+            <span class="text-border">•</span>
+            <span>Built with <a href="#" class="text-foreground font-medium hover:underline transition-colors">SuperDocs</a></span>
+            <span class="text-border">•</span>
+            <span>v{config.metadata.version}</span>
+          </p>
+        </div>
+        <div class="text-sm text-muted-foreground">
+          <p class="m-0">
+            <a href="https://github.com/devrohit06/superdocs" class="text-foreground hover:text-foreground/80 transition-colors" title="View on GitHub">
+              GitHub
+            </a>
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 </footer>
