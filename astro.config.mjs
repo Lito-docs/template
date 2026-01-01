@@ -5,16 +5,29 @@ import tailwindcss from '@tailwindcss/vite';
 import embeds from 'astro-embed/integration';
 import expressiveCode from 'astro-expressive-code';
 import mermaid from 'astro-mermaid';
+import icon from 'astro-icon';
 import remarkGithubAlerts from './src/plugins/remark-github-alerts.js';
 
 // https://astro.build/config
 export default defineConfig({
   integrations: [
+    icon({
+      include: {
+        lucide: ['*'],
+        heroicons: ['*'],
+        mdi: ['*'],
+        'fa6-solid': ['*'],
+        'fa6-brands': ['*'],
+      },
+    }),
     mermaid({
       autoTheme: true,
     }),
     AutoImport({
       imports: [
+        // Icon component
+        './src/components/Icon.astro',
+
         // Core components
         './src/components/mdx/Alert.astro',
         './src/components/mdx/Badge.astro',
