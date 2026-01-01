@@ -1,0 +1,607 @@
+---
+/**
+ * EndpointPage - Full API endpoint documentation with two-column layout
+ *
+ * This component renders:
+ * - Left column: Full schema documentation (params, body, responses)
+ * - Right column: Interactive playground (sticky)
+ *
+ * Usage with dynamic routes:
+ * ---
+ * import EndpointPage from '@/components/api/EndpointPage.astro';
+ * import { parseOpenAPIFile, getEndpointBySlug } from '@/utils/openapi';
+ *
+ * const spec = await parseOpenAPIFile('openapi.yaml');
+ * const endpoint = getEndpointBySlug(spec, Astro.params.slug);
+ * ---
+ * <EndpointPage endpoint={endpoint} spec={spec} />
+ */
+import Layout from '../../layouts/Layout.astro';
+import APIPlayground from '../mdx/APIPlayground.astro';
+import ParamTable from '../mdx/ParamTable.astro';
+import Param from '../mdx/Param.astro';
+import ResponseField from '../mdx/ResponseField.astro';
+import Icon from '../Icon.astro';
+import type { APIEndpoint, APIParameter, ParsedOpenAPI } from '../../utils/openapi';
+
+interface Props {
+  endpoint: APIEndpoint;
+  spec: ParsedOpenAPI;
+  baseUrl?: string;
+}
+
+const { endpoint, spec, baseUrl: propBaseUrl } = Astro.props;
+const serverUrl = propBaseUrl || spec.servers?.[0]?.url || '';
+
+// Get schema type as string
+function getSchemaType(schema: any): string {
+  if (!schema) return 'any';
+  if (schema.type === 'array' && schema.items) {
+    return `${getSchemaType(schema.items)}[]`;
+  }
+  return schema.type || 'object';
+}
+
+// Group parameters by location
+function groupParameters(params: APIParameter[] = []) {
+  return {
+    path: params.filter(p => p.in === 'path'),
+    query: params.filter(p => p.in === 'query'),
+    header: params.filter(p => p.in === 'header'),
+    cookie: params.filter(p => p.in === 'cookie'),
+  };
+}
+
+// Determine auth type
+function getAuthType(): "bearer" | "api-key" | "basic" | "none" {
+  if (!endpoint.security || endpoint.security.length === 0) return "none";
+  return "bearer";
+}
+
+const paramGroups = groupParameters(endpoint.parameters);
+const auth = getAuthType();
+const successResponse = endpoint.responses?.['200'] || endpoint.responses?.['201'];
+const errorResponses = Object.entries(endpoint.responses || {}).filter(
+  ([code]) => code.startsWith('4') || code.startsWith('5')
+);
+const requestContent = endpoint.requestBody?.content?.['application/json'];
+const title = endpoint.summary || `${endpoint.method} ${endpoint.path}`;
+---
+
+<Layout title={title} description={endpoint.description}>
+  <main class="api-page-main">
+    <div class="api-page-container">
+      <!-- Left Column: Documentation -->
+      <div class="api-docs-column">
+        <div class="api-docs-content">
+          <!-- Endpoint Header -->
+          <div class="endpoint-header">
+            <h1 class="endpoint-title">{endpoint.summary || endpoint.path}</h1>
+            {endpoint.tags && endpoint.tags.length > 0 && (
+              <div class="endpoint-tags">
+                {endpoint.tags.map(tag => (
+                  <span class="tag-badge">{tag}</span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {endpoint.description && (
+            <p class="endpoint-description">{endpoint.description}</p>
+          )}
+
+          <!-- Method + Path Display -->
+          <div class="endpoint-path-display">
+            <span class={`method-badge method-${endpoint.method.toLowerCase()}`}>
+              {endpoint.method}
+            </span>
+            <code class="endpoint-path">{endpoint.path}</code>
+            <button class="copy-path-btn" data-path={`${serverUrl}${endpoint.path}`}>
+              <Icon name="lucide:copy" size={14} />
+            </button>
+          </div>
+
+          <!-- Authorization -->
+          {auth !== 'none' && (
+            <div class="auth-section">
+              <div class="section-header">
+                <Icon name="lucide:shield" size={16} />
+                <span>Authorization</span>
+              </div>
+              <div class="auth-badge">
+                <Icon name="lucide:key" size={14} />
+                <span>{auth === 'bearer' ? 'Bearer Token' : auth === 'api-key' ? 'API Key' : 'Basic Auth'}</span>
+                <span class="required-tag">Required</span>
+              </div>
+            </div>
+          )}
+
+          <!-- Path Parameters -->
+          {paramGroups.path.length > 0 && (
+            <div class="params-section">
+              <div class="section-header">
+                <Icon name="lucide:route" size={16} />
+                <span>Path Parameters</span>
+              </div>
+              <div class="params-list">
+                {paramGroups.path.map((param) => (
+                  <div class="param-item">
+                    <div class="param-header">
+                      <code class="param-name">{param.name}</code>
+                      <span class={`type-badge type-${getSchemaType(param.schema)}`}>
+                        {getSchemaType(param.schema)}
+                      </span>
+                      {param.required && <span class="required-tag">Required</span>}
+                    </div>
+                    {param.description && <p class="param-desc">{param.description}</p>}
+                    {param.schema?.enum && (
+                      <div class="enum-values">
+                        <span class="enum-label">Possible values:</span>
+                        {param.schema.enum.map((v: string) => (
+                          <code class="enum-value">{v}</code>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <!-- Query Parameters -->
+          {paramGroups.query.length > 0 && (
+            <div class="params-section">
+              <div class="section-header">
+                <Icon name="lucide:search" size={16} />
+                <span>Query Parameters</span>
+              </div>
+              <div class="params-list">
+                {paramGroups.query.map((param) => (
+                  <div class="param-item">
+                    <div class="param-header">
+                      <code class="param-name">{param.name}</code>
+                      <span class={`type-badge type-${getSchemaType(param.schema)}`}>
+                        {getSchemaType(param.schema)}
+                      </span>
+                      {param.required && <span class="required-tag">Required</span>}
+                      {param.schema?.default !== undefined && (
+                        <span class="default-tag">Default: {String(param.schema.default)}</span>
+                      )}
+                    </div>
+                    {param.description && <p class="param-desc">{param.description}</p>}
+                    {param.schema?.enum && (
+                      <div class="enum-values">
+                        <span class="enum-label">Possible values:</span>
+                        {param.schema.enum.map((v: string) => (
+                          <code class="enum-value">{v}</code>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <!-- Header Parameters -->
+          {paramGroups.header.length > 0 && (
+            <div class="params-section">
+              <div class="section-header">
+                <Icon name="lucide:file-text" size={16} />
+                <span>Header Parameters</span>
+              </div>
+              <div class="params-list">
+                {paramGroups.header.map((param) => (
+                  <div class="param-item">
+                    <div class="param-header">
+                      <code class="param-name">{param.name}</code>
+                      <span class={`type-badge type-${getSchemaType(param.schema)}`}>
+                        {getSchemaType(param.schema)}
+                      </span>
+                      {param.required && <span class="required-tag">Required</span>}
+                    </div>
+                    {param.description && <p class="param-desc">{param.description}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <!-- Request Body -->
+          {requestContent?.schema && (
+            <div class="body-section">
+              <div class="section-header">
+                <Icon name="lucide:file-input" size={16} />
+                <span>Request Body</span>
+                {endpoint.requestBody?.required && <span class="required-tag">Required</span>}
+              </div>
+              <div class="content-type">
+                <code>application/json</code>
+              </div>
+              <div class="schema-fields">
+                {requestContent.schema.properties && Object.entries(requestContent.schema.properties).map(([name, prop]: [string, any]) => (
+                  <div class="field-item">
+                    <div class="field-header">
+                      <code class="field-name">{name}</code>
+                      <span class={`type-badge type-${getSchemaType(prop)}`}>
+                        {getSchemaType(prop)}
+                      </span>
+                      {requestContent.schema.required?.includes(name) && (
+                        <span class="required-tag">Required</span>
+                      )}
+                      {prop.nullable && <span class="nullable-tag">Nullable</span>}
+                    </div>
+                    {prop.description && <p class="field-desc">{prop.description}</p>}
+                    {prop.enum && (
+                      <div class="enum-values">
+                        <span class="enum-label">Possible values:</span>
+                        {prop.enum.map((v: string) => (
+                          <code class="enum-value">{v}</code>
+                        ))}
+                      </div>
+                    )}
+                    {prop.example !== undefined && (
+                      <div class="example-value">
+                        <span class="example-label">Example:</span>
+                        <code>{JSON.stringify(prop.example)}</code>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <!-- Response -->
+          {successResponse && (
+            <div class="response-section">
+              <div class="section-header">
+                <Icon name="lucide:check-circle" size={16} />
+                <span>Response</span>
+                <span class="status-badge status-success">200 OK</span>
+              </div>
+              {successResponse.description && (
+                <p class="response-desc">{successResponse.description}</p>
+              )}
+              {successResponse.content?.['application/json']?.schema && (
+                <div class="schema-fields">
+                  {(() => {
+                    const respSchema = successResponse.content['application/json'].schema;
+                    const props = respSchema.properties || (respSchema.items?.properties);
+                    if (!props) return null;
+                    return Object.entries(props).map(([name, prop]: [string, any]) => (
+                      <div class="field-item">
+                        <div class="field-header">
+                          <code class="field-name">{name}</code>
+                          <span class={`type-badge type-${getSchemaType(prop)}`}>
+                            {getSchemaType(prop)}
+                          </span>
+                          {prop.nullable && <span class="nullable-tag">Nullable</span>}
+                        </div>
+                        {prop.description && <p class="field-desc">{prop.description}</p>}
+                      </div>
+                    ));
+                  })()}
+                </div>
+              )}
+            </div>
+          )}
+
+          <!-- Error Responses -->
+          {errorResponses.length > 0 && (
+            <div class="error-responses-section">
+              <div class="section-header">
+                <Icon name="lucide:alert-triangle" size={16} />
+                <span>Error Responses</span>
+              </div>
+              <div class="error-list">
+                {errorResponses.map(([code, response]) => (
+                  <div class="error-item">
+                    <span class={`status-badge ${code.startsWith('4') ? 'status-warning' : 'status-error'}`}>
+                      {code}
+                    </span>
+                    <span class="error-desc">{response.description}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <!-- Right Column: Playground (Sticky) -->
+      <div class="api-playground-column">
+        <div class="playground-sticky-wrapper">
+          <div class="playground-header">
+            <Icon name="lucide:play-circle" size={16} />
+            <span class="playground-title">Try it out</span>
+          </div>
+          <APIPlayground
+            method={endpoint.method as any}
+            path={endpoint.path}
+            baseUrl={serverUrl}
+            auth={auth}
+          />
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  // Copy path button functionality
+  document.querySelectorAll('.copy-path-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const path = btn.getAttribute('data-path');
+      if (path) {
+        await navigator.clipboard.writeText(path);
+        btn.classList.add('copied');
+        setTimeout(() => btn.classList.remove('copied'), 2000);
+      }
+    });
+  });
+</script>
+
+<style>
+  @reference '../../styles/global.css';
+
+  .api-page-main {
+    @apply min-h-screen flex flex-col flex-1 pt-16;
+    margin-left: 0;
+  }
+
+  @media (min-width: 768px) {
+    .api-page-main {
+      margin-left: 18rem;
+    }
+  }
+
+  .api-page-container {
+    @apply flex flex-col xl:flex-row w-full min-h-[calc(100vh-4rem)];
+  }
+
+  /* Left Column - Documentation */
+  .api-docs-column {
+    @apply flex-1 min-w-0 overflow-y-auto;
+  }
+
+  .api-docs-content {
+    @apply p-6 lg:p-8 xl:p-10 max-w-4xl;
+  }
+
+  /* Header */
+  .endpoint-header {
+    @apply mb-4;
+  }
+
+  .endpoint-title {
+    @apply text-2xl lg:text-3xl font-bold text-foreground mb-2;
+  }
+
+  .endpoint-tags {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .tag-badge {
+    @apply px-2 py-0.5 text-xs font-medium rounded-full;
+    @apply bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400;
+  }
+
+  .endpoint-description {
+    @apply text-base text-muted-foreground mb-6 leading-relaxed;
+  }
+
+  /* Path Display */
+  .endpoint-path-display {
+    @apply flex items-center gap-3 p-4 rounded-lg mb-8;
+    @apply bg-muted/50 border border-border;
+  }
+
+  .method-badge {
+    @apply px-3 py-1.5 text-sm font-bold uppercase rounded-md shrink-0;
+  }
+
+  .method-get { @apply bg-emerald-500/15 text-emerald-600 dark:text-emerald-400; }
+  .method-post { @apply bg-blue-500/15 text-blue-600 dark:text-blue-400; }
+  .method-put { @apply bg-amber-500/15 text-amber-600 dark:text-amber-400; }
+  .method-patch { @apply bg-orange-500/15 text-orange-600 dark:text-orange-400; }
+  .method-delete { @apply bg-red-500/15 text-red-600 dark:text-red-400; }
+
+  .endpoint-path {
+    @apply text-sm lg:text-base font-mono text-foreground flex-1 break-all;
+  }
+
+  .copy-path-btn {
+    @apply p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors;
+  }
+
+  .copy-path-btn.copied {
+    @apply text-emerald-500;
+  }
+
+  /* Sections */
+  .auth-section,
+  .params-section,
+  .body-section,
+  .response-section,
+  .error-responses-section {
+    @apply mb-8 pb-8 border-b border-border last:border-b-0;
+  }
+
+  .section-header {
+    @apply flex items-center gap-2 text-sm font-semibold text-foreground mb-4;
+  }
+
+  .section-header > :global(svg) {
+    @apply text-muted-foreground;
+  }
+
+  /* Auth Badge */
+  .auth-badge {
+    @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg;
+    @apply bg-amber-500/10 text-amber-700 dark:text-amber-400 text-sm;
+  }
+
+  /* Parameters & Fields */
+  .params-list,
+  .schema-fields {
+    @apply rounded-lg border border-border overflow-hidden divide-y divide-border;
+  }
+
+  .param-item,
+  .field-item {
+    @apply p-4 bg-card hover:bg-muted/30 transition-colors;
+  }
+
+  .param-header,
+  .field-header {
+    @apply flex flex-wrap items-center gap-2 mb-1;
+  }
+
+  .param-name,
+  .field-name {
+    @apply text-sm font-semibold text-foreground;
+  }
+
+  .type-badge {
+    @apply px-1.5 py-0.5 text-[10px] font-medium uppercase rounded;
+    @apply bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400;
+  }
+
+  .type-string { @apply bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400; }
+  .type-integer, .type-number { @apply bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400; }
+  .type-boolean { @apply bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400; }
+  .type-array { @apply bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400; }
+  .type-object { @apply bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400; }
+
+  .required-tag {
+    @apply px-1.5 py-0.5 text-[10px] font-semibold uppercase rounded;
+    @apply bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400;
+  }
+
+  .nullable-tag {
+    @apply px-1.5 py-0.5 text-[10px] font-medium uppercase rounded;
+    @apply bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500;
+  }
+
+  .default-tag {
+    @apply px-1.5 py-0.5 text-[10px] font-medium rounded;
+    @apply bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400;
+  }
+
+  .param-desc,
+  .field-desc {
+    @apply text-sm text-muted-foreground leading-relaxed;
+  }
+
+  .enum-values {
+    @apply flex flex-wrap items-center gap-1.5 mt-2;
+  }
+
+  .enum-label {
+    @apply text-xs text-muted-foreground;
+  }
+
+  .enum-value {
+    @apply px-1.5 py-0.5 text-xs font-mono rounded;
+    @apply bg-muted text-foreground;
+  }
+
+  .example-value {
+    @apply flex items-center gap-2 mt-2;
+  }
+
+  .example-label {
+    @apply text-xs text-muted-foreground;
+  }
+
+  .content-type {
+    @apply mb-3;
+  }
+
+  .content-type code {
+    @apply text-xs px-2 py-1 rounded bg-muted text-muted-foreground;
+  }
+
+  /* Response */
+  .response-desc {
+    @apply text-sm text-muted-foreground mb-4;
+  }
+
+  .status-badge {
+    @apply px-2 py-0.5 text-xs font-semibold rounded;
+  }
+
+  .status-success {
+    @apply bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400;
+  }
+
+  .status-warning {
+    @apply bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400;
+  }
+
+  .status-error {
+    @apply bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400;
+  }
+
+  /* Error Responses */
+  .error-list {
+    @apply space-y-2;
+  }
+
+  .error-item {
+    @apply flex items-center gap-3 p-3 rounded-lg bg-muted/30;
+  }
+
+  .error-desc {
+    @apply text-sm text-muted-foreground;
+  }
+
+  /* Right Column - Playground */
+  .api-playground-column {
+    @apply w-full xl:w-[480px] 2xl:w-[520px] shrink-0;
+    @apply bg-muted/20 border-t xl:border-t-0 xl:border-l border-border;
+  }
+
+  .playground-sticky-wrapper {
+    @apply p-4 lg:p-6;
+    @apply xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto;
+  }
+
+  .playground-header {
+    @apply flex items-center gap-2 mb-4 pb-3 border-b border-border;
+  }
+
+  .playground-header > :global(svg) {
+    @apply text-primary-500;
+  }
+
+  .playground-title {
+    @apply text-sm font-semibold uppercase tracking-wider text-foreground;
+  }
+
+  /* Responsive */
+  @media (max-width: 1279px) {
+    .api-playground-column {
+      @apply max-h-none;
+    }
+
+    .playground-sticky-wrapper {
+      @apply max-h-none;
+      position: static;
+    }
+  }
+
+  /* Scrollbar */
+  .playground-sticky-wrapper::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .playground-sticky-wrapper::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .playground-sticky-wrapper::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+</style>
