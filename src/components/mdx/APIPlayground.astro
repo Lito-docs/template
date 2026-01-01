@@ -1,386 +1,738 @@
 ---
 /**
- * APIPlayground - Interactive API testing component
- * Allows users to test API endpoints directly from documentation
- * Usage: <APIPlayground method="GET" path="/users/{id}" baseUrl="https://api.example.com" />
+ * APIPlayground - Professional interactive API testing component
+ * Redesigned with modern UI, code generation, and better UX
+ *
+ * Usage:
+ * <APIPlayground
+ *   method="GET"
+ *   path="/users/{id}"
+ *   baseUrl="https://api.example.com"
+ *   auth="bearer"
+ * />
  */
+import Icon from '../Icon.astro';
+
 interface Props {
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   path: string;
   baseUrl?: string;
+  auth?: "bearer" | "api-key" | "basic" | "none";
+  defaultHeaders?: Record<string, string>;
 }
 
-const { method, path, baseUrl = "" } = Astro.props;
+const {
+  method,
+  path,
+  baseUrl = "",
+  auth,
+  defaultHeaders = { "Content-Type": "application/json" }
+} = Astro.props;
 
-const methodColors: Record<string, string> = {
-  GET: "bg-emerald-500",
-  POST: "bg-blue-500",
-  PUT: "bg-amber-500",
-  PATCH: "bg-orange-500",
-  DELETE: "bg-red-500",
+const methodColors: Record<string, { bg: string; text: string }> = {
+  GET: { bg: "bg-emerald-500", text: "text-white" },
+  POST: { bg: "bg-blue-500", text: "text-white" },
+  PUT: { bg: "bg-amber-500", text: "text-white" },
+  PATCH: { bg: "bg-orange-500", text: "text-white" },
+  DELETE: { bg: "bg-red-500", text: "text-white" },
 };
 
-const methodColor = methodColors[method] || "bg-gray-500";
+const colors = methodColors[method] || methodColors.GET;
 const playgroundId = `playground-${Math.random().toString(36).slice(2, 9)}`;
+const defaultHeadersJson = JSON.stringify(defaultHeaders);
 ---
 
 <div
-  class="api-playground"
+  class="api-playground not-prose"
   id={playgroundId}
   data-method={method}
   data-path={path}
   data-base-url={baseUrl}
+  data-auth={auth}
+  data-default-headers={defaultHeadersJson}
 >
+  <!-- Header -->
   <div class="playground-header">
-    <span class={`playground-method ${methodColor}`}>{method}</span>
-    <div class="playground-url-container">
+    <div class="playground-url">
+      <span class:list={["method-badge", colors.bg, colors.text]}>{method}</span>
       <input
         type="text"
-        class="playground-base-url"
-        placeholder="Base URL"
+        class="base-url-input"
+        placeholder="https://api.example.com"
         value={baseUrl}
+        aria-label="Base URL"
       />
-      <code class="playground-path">{path}</code>
+      <code class="path-display">{path}</code>
     </div>
-    <button class="playground-send-btn">
-      Send
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="m22 2-7 20-4-9-9-4Z"></path>
-        <path d="M22 2 11 13"></path>
-      </svg>
+    <button class="send-btn">
+      <Icon name="lucide:play" size={14} />
+      <span>Send</span>
     </button>
   </div>
 
-  <div class="playground-body">
-    <div class="playground-tabs">
-      <button class="playground-tab active" data-tab="params">Params</button>
-      <button class="playground-tab" data-tab="headers">Headers</button>
-      <button class="playground-tab" data-tab="body">Body</button>
+  <!-- Auth Section (if applicable) -->
+  {auth && auth !== "none" && (
+    <div class="auth-section">
+      <div class="auth-header">
+        <Icon name="lucide:lock" size={14} />
+        <span>Authorization</span>
+      </div>
+      <div class="auth-input-group">
+        {auth === "bearer" && (
+          <>
+            <span class="auth-label">Bearer Token</span>
+            <input type="text" class="auth-token-input" placeholder="Enter your token" />
+          </>
+        )}
+        {auth === "api-key" && (
+          <>
+            <input type="text" class="auth-key-input" placeholder="Header name" value="X-API-Key" />
+            <input type="text" class="auth-value-input" placeholder="API key value" />
+          </>
+        )}
+        {auth === "basic" && (
+          <>
+            <input type="text" class="auth-user-input" placeholder="Username" />
+            <input type="password" class="auth-pass-input" placeholder="Password" />
+          </>
+        )}
+      </div>
     </div>
+  )}
 
-    <div class="playground-tab-content active" data-content="params">
-      <div class="playground-params">
-        <div class="playground-param-row">
-          <input type="text" placeholder="Key" class="playground-param-key" />
-          <input
-            type="text"
-            placeholder="Value"
-            class="playground-param-value"
-          />
-          <button class="playground-param-remove">×</button>
+  <!-- Tabs -->
+  <div class="playground-tabs">
+    <button class="tab-btn active" data-tab="params">
+      <Icon name="lucide:sliders-horizontal" size={14} />
+      Params
+    </button>
+    <button class="tab-btn" data-tab="headers">
+      <Icon name="lucide:file-text" size={14} />
+      Headers
+    </button>
+    <button class="tab-btn" data-tab="body">
+      <Icon name="lucide:braces" size={14} />
+      Body
+    </button>
+    <button class="tab-btn" data-tab="code">
+      <Icon name="lucide:code" size={14} />
+      Code
+    </button>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="tab-content">
+    <!-- Params Tab -->
+    <div class="tab-panel active" data-panel="params">
+      <div class="kv-editor params-editor">
+        <div class="kv-row template" style="display:none">
+          <input type="text" placeholder="Key" class="kv-key" />
+          <input type="text" placeholder="Value" class="kv-value" />
+          <button class="kv-remove" aria-label="Remove">
+            <Icon name="lucide:x" size={14} />
+          </button>
         </div>
       </div>
-      <button class="playground-add-param">+ Add Parameter</button>
+      <button class="add-row-btn" data-target="params">
+        <Icon name="lucide:plus" size={14} />
+        Add Parameter
+      </button>
     </div>
 
-    <div class="playground-tab-content" data-content="headers">
-      <div class="playground-headers">
-        <div class="playground-param-row">
-          <input
-            type="text"
-            placeholder="Header"
-            class="playground-param-key"
-            value="Content-Type"
-          />
-          <input
-            type="text"
-            placeholder="Value"
-            class="playground-param-value"
-            value="application/json"
-          />
-          <button class="playground-param-remove">×</button>
+    <!-- Headers Tab -->
+    <div class="tab-panel" data-panel="headers">
+      <div class="kv-editor headers-editor">
+        <div class="kv-row template" style="display:none">
+          <input type="text" placeholder="Header" class="kv-key" />
+          <input type="text" placeholder="Value" class="kv-value" />
+          <button class="kv-remove" aria-label="Remove">
+            <Icon name="lucide:x" size={14} />
+          </button>
         </div>
       </div>
-      <button class="playground-add-header">+ Add Header</button>
+      <button class="add-row-btn" data-target="headers">
+        <Icon name="lucide:plus" size={14} />
+        Add Header
+      </button>
     </div>
 
-    <div class="playground-tab-content" data-content="body">
-      <textarea class="playground-body-input" placeholder='{"key": "value"}'
-      ></textarea>
+    <!-- Body Tab -->
+    <div class="tab-panel" data-panel="body">
+      <div class="body-editor">
+        <div class="body-toolbar">
+          <select class="body-type-select">
+            <option value="json">JSON</option>
+            <option value="form">Form Data</option>
+            <option value="raw">Raw</option>
+          </select>
+          <button class="format-btn" title="Format JSON">
+            <Icon name="lucide:align-left" size={14} />
+          </button>
+        </div>
+        <textarea class="body-textarea" placeholder='{"key": "value"}'></textarea>
+      </div>
+    </div>
+
+    <!-- Code Tab -->
+    <div class="tab-panel" data-panel="code">
+      <div class="code-generator">
+        <div class="code-toolbar">
+          <select class="lang-select">
+            <option value="curl">cURL</option>
+            <option value="javascript">JavaScript</option>
+            <option value="python">Python</option>
+            <option value="go">Go</option>
+          </select>
+          <button class="copy-code-btn">
+            <Icon name="lucide:copy" size={14} />
+            Copy
+          </button>
+        </div>
+        <pre class="code-output"><code></code></pre>
+      </div>
     </div>
   </div>
 
-  <div class="playground-response hidden">
-    <div class="playground-response-header">
-      <span class="playground-response-title">Response</span>
-      <span class="playground-status"></span>
-      <span class="playground-time"></span>
+  <!-- Response Section -->
+  <div class="response-section hidden">
+    <div class="response-header">
+      <div class="response-meta">
+        <span class="response-label">Response</span>
+        <span class="status-badge"></span>
+        <span class="response-time"></span>
+        <span class="response-size"></span>
+      </div>
+      <div class="response-actions">
+        <button class="copy-response-btn" title="Copy response">
+          <Icon name="lucide:copy" size={14} />
+        </button>
+      </div>
     </div>
-    <pre class="playground-response-body"><code /></pre>
+    <div class="response-tabs">
+      <button class="response-tab active" data-rtab="body">Body</button>
+      <button class="response-tab" data-rtab="headers">Headers</button>
+    </div>
+    <div class="response-body-panel active" data-rpanel="body">
+      <pre class="response-body"><code></code></pre>
+    </div>
+    <div class="response-body-panel" data-rpanel="headers">
+      <pre class="response-headers"><code></code></pre>
+    </div>
   </div>
 </div>
 
 <style>
   @reference "../../styles/global.css";
+
   .api-playground {
-    @apply my-6 rounded border border-border bg-card overflow-hidden;
-    max-width: 100%;
+    @apply my-6 rounded-xl border border-border bg-card overflow-hidden;
+    box-shadow: var(--shadow-md);
   }
 
+  /* Header */
   .playground-header {
-    @apply flex items-center gap-2 p-3 bg-muted/50 border-b border-border flex-wrap;
+    @apply flex items-center gap-3 p-4 border-b border-border;
+    @apply flex-wrap;
+    background: linear-gradient(to right, var(--muted), transparent);
   }
 
-  .playground-method {
-    @apply px-3 py-1.5 text-xs font-bold text-white uppercase rounded;
+  .playground-url {
+    @apply flex items-center gap-2 flex-1 min-w-0 flex-wrap;
   }
 
-  .playground-url-container {
-    @apply flex-1 flex items-center gap-1 overflow-hidden;
+  .method-badge {
+    @apply px-3 py-1.5 text-xs font-bold uppercase rounded-lg;
+    @apply flex-shrink-0 tracking-wide;
   }
 
-  .playground-base-url {
-    @apply w-40 px-2 py-1.5 text-xs bg-background border border-border rounded text-foreground;
-    @apply focus:outline-none focus:ring-1 focus:ring-ring;
+  .base-url-input {
+    @apply px-3 py-2 text-sm bg-background border border-border rounded-lg;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500;
+    @apply text-foreground w-48;
   }
 
-  .playground-path {
+  .path-display {
     @apply text-sm font-mono text-foreground truncate;
+    @apply bg-transparent border-0 p-0;
   }
 
-  .playground-send-btn {
-    @apply flex items-center gap-2 px-4 py-1.5 text-sm font-medium text-primary-foreground bg-primary rounded;
-    @apply hover:opacity-90 transition-opacity;
+  .send-btn {
+    @apply inline-flex items-center gap-2 px-4 py-2;
+    @apply text-sm font-semibold text-primary-foreground;
+    @apply bg-primary-600 hover:bg-primary-700 rounded-lg;
+    @apply transition-all duration-150;
+    @apply shadow-sm hover:shadow;
   }
 
-  .playground-body {
-    @apply p-3 overflow-hidden;
-    max-width: 100%;
+  :global(.dark) .send-btn {
+    @apply bg-primary-500 hover:bg-primary-600;
   }
 
-  .playground-tabs {
-    @apply flex gap-1 mb-3;
+  /* Auth Section */
+  .auth-section {
+    @apply px-4 py-3 border-b border-border bg-muted/30;
   }
 
-  .playground-tab {
-    @apply px-3 py-1.5 text-xs font-medium text-muted-foreground rounded;
-    @apply hover:text-foreground hover:bg-muted transition-colors;
+  .auth-header {
+    @apply flex items-center gap-2 text-xs font-semibold text-muted-foreground mb-2;
   }
 
-  .playground-tab.active {
-    @apply text-foreground bg-muted;
+  .auth-input-group {
+    @apply flex items-center gap-2 flex-wrap;
   }
 
-  .playground-tab-content {
-    @apply hidden;
-  }
-
-  .playground-tab-content.active {
-    @apply block;
-  }
-
-  .playground-params,
-  .playground-headers {
-    @apply space-y-2;
-  }
-
-  .playground-param-row {
-    @apply flex gap-2 flex-wrap;
-  }
-
-  .playground-param-key,
-  .playground-param-value {
-    @apply flex-1 px-2 py-1.5 text-sm bg-background border border-border rounded text-foreground;
-    @apply focus:outline-none focus:ring-1 focus:ring-ring;
-  }
-
-  .playground-param-remove {
-    @apply w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-destructive;
-    @apply rounded hover:bg-muted transition-colors;
-  }
-
-  .playground-add-param,
-  .playground-add-header {
-    @apply mt-2 text-xs text-primary hover:underline;
-  }
-
-  .playground-body-input {
-    @apply w-full h-32 px-3 py-2 text-sm font-mono bg-background border border-border rounded text-foreground;
-    @apply focus:outline-none focus:ring-1 focus:ring-ring resize-none;
-  }
-
-  .playground-response {
-    @apply border-t border-border;
-  }
-
-  .playground-response.hidden {
-    display: none;
-  }
-
-  .playground-response-header {
-    @apply flex items-center gap-3 px-3 py-2 bg-muted/50;
-  }
-
-  .playground-response-title {
-    @apply text-sm font-semibold text-foreground;
-  }
-
-  .playground-status {
-    @apply px-2 py-0.5 text-xs font-mono rounded;
-  }
-
-  .playground-status.success {
-    @apply bg-emerald-500/10 text-emerald-500;
-  }
-
-  .playground-status.error {
-    @apply bg-red-500/10 text-red-500;
-  }
-
-  .playground-time {
+  .auth-label {
     @apply text-xs text-muted-foreground;
   }
 
-  .playground-response-body {
-    @apply p-3 text-sm font-mono overflow-x-auto bg-muted/30 m-0;
-    max-width: 100%;
-    word-break: break-word;
+  .auth-token-input,
+  .auth-key-input,
+  .auth-value-input,
+  .auth-user-input,
+  .auth-pass-input {
+    @apply px-3 py-1.5 text-sm bg-background border border-border rounded-lg;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500;
+    @apply text-foreground flex-1 min-w-[120px];
   }
 
-  .playground-response-body code {
-    @apply text-foreground !bg-transparent !p-0 !border-0;
+  /* Tabs */
+  .playground-tabs {
+    @apply flex border-b border-border;
+  }
+
+  .tab-btn {
+    @apply inline-flex items-center gap-1.5 px-4 py-3;
+    @apply text-sm font-medium text-muted-foreground;
+    @apply border-b-2 border-transparent;
+    @apply hover:text-foreground hover:bg-muted/50;
+    @apply transition-colors;
+  }
+
+  .tab-btn.active {
+    @apply text-primary-600 border-primary-600;
+  }
+
+  :global(.dark) .tab-btn.active {
+    @apply text-primary-400 border-primary-400;
+  }
+
+  /* Tab Content */
+  .tab-content {
+    @apply p-4;
+  }
+
+  .tab-panel {
+    @apply hidden;
+  }
+
+  .tab-panel.active {
+    @apply block;
+  }
+
+  /* KV Editor (Params/Headers) */
+  .kv-editor {
+    @apply space-y-2;
+  }
+
+  .kv-row {
+    @apply flex items-center gap-2;
+  }
+
+  .kv-row.template {
+    display: none;
+  }
+
+  .kv-key,
+  .kv-value {
+    @apply flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500;
+    @apply text-foreground;
+  }
+
+  .kv-remove {
+    @apply p-2 text-muted-foreground hover:text-red-500;
+    @apply rounded-lg hover:bg-red-500/10 transition-colors;
+  }
+
+  .add-row-btn {
+    @apply inline-flex items-center gap-1.5 mt-3 px-3 py-1.5;
+    @apply text-xs font-medium text-primary-600;
+    @apply hover:bg-primary-500/10 rounded-lg transition-colors;
+  }
+
+  :global(.dark) .add-row-btn {
+    @apply text-primary-400;
+  }
+
+  /* Body Editor */
+  .body-editor {
+    @apply space-y-2;
+  }
+
+  .body-toolbar {
+    @apply flex items-center gap-2;
+  }
+
+  .body-type-select,
+  .lang-select {
+    @apply px-3 py-1.5 text-xs bg-background border border-border rounded-lg;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500/30;
+    @apply text-foreground;
+  }
+
+  .format-btn {
+    @apply p-1.5 text-muted-foreground hover:text-foreground;
+    @apply rounded-lg hover:bg-muted transition-colors;
+  }
+
+  .body-textarea {
+    @apply w-full h-40 px-4 py-3 text-sm font-mono;
+    @apply bg-background border border-border rounded-lg;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500;
+    @apply text-foreground resize-none;
+  }
+
+  /* Code Generator */
+  .code-generator {
+    @apply space-y-2;
+  }
+
+  .code-toolbar {
+    @apply flex items-center justify-between;
+  }
+
+  .copy-code-btn {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5;
+    @apply text-xs font-medium text-muted-foreground;
+    @apply hover:text-foreground hover:bg-muted rounded-lg transition-colors;
+  }
+
+  .code-output {
+    @apply p-4 text-sm font-mono bg-gray-900 text-gray-100 rounded-lg;
+    @apply overflow-x-auto m-0;
+    max-height: 300px;
+  }
+
+  /* Response Section */
+  .response-section {
+    @apply border-t border-border;
+  }
+
+  .response-section.hidden {
+    display: none;
+  }
+
+  .response-header {
+    @apply flex items-center justify-between px-4 py-3;
+    @apply border-b border-border bg-muted/50;
+  }
+
+  .response-meta {
+    @apply flex items-center gap-3;
+  }
+
+  .response-label {
+    @apply text-sm font-semibold text-foreground;
+  }
+
+  .status-badge {
+    @apply px-2 py-0.5 text-xs font-mono font-semibold rounded;
+  }
+
+  .status-badge.success {
+    @apply bg-emerald-500/15 text-emerald-600;
+  }
+
+  :global(.dark) .status-badge.success {
+    @apply text-emerald-400;
+  }
+
+  .status-badge.error {
+    @apply bg-red-500/15 text-red-600;
+  }
+
+  :global(.dark) .status-badge.error {
+    @apply text-red-400;
+  }
+
+  .response-time,
+  .response-size {
+    @apply text-xs text-muted-foreground;
+  }
+
+  .response-actions {
+    @apply flex items-center gap-2;
+  }
+
+  .copy-response-btn {
+    @apply p-1.5 text-muted-foreground hover:text-foreground;
+    @apply rounded-lg hover:bg-muted transition-colors;
+  }
+
+  .response-tabs {
+    @apply flex border-b border-border;
+  }
+
+  .response-tab {
+    @apply px-4 py-2 text-xs font-medium text-muted-foreground;
+    @apply hover:text-foreground transition-colors;
+    @apply border-b-2 border-transparent;
+  }
+
+  .response-tab.active {
+    @apply text-foreground border-primary-500;
+  }
+
+  .response-body-panel {
+    @apply hidden;
+  }
+
+  .response-body-panel.active {
+    @apply block;
+  }
+
+  .response-body,
+  .response-headers {
+    @apply p-4 text-sm font-mono bg-muted/30 overflow-x-auto m-0;
+    max-height: 400px;
+  }
+
+  .response-body code,
+  .response-headers code {
+    @apply text-foreground;
   }
 </style>
 
 <script>
   function initPlayground(container: HTMLElement) {
-    const methodEl = container.dataset.method;
-    const pathEl = container.dataset.path;
+    const method = container.dataset.method || 'GET';
+    const path = container.dataset.path || '';
+    const auth = container.dataset.auth;
+    const defaultHeaders = JSON.parse(container.dataset.defaultHeaders || '{}');
 
     // Tab switching
-    const tabs = container.querySelectorAll(".playground-tab");
-    const contents = container.querySelectorAll(".playground-tab-content");
+    const tabBtns = container.querySelectorAll('.tab-btn');
+    const tabPanels = container.querySelectorAll('.tab-panel');
 
-    tabs.forEach((tab) => {
-      tab.addEventListener("click", () => {
-        const targetTab = (tab as HTMLElement).dataset.tab;
-        tabs.forEach((t) => t.classList.remove("active"));
-        contents.forEach((c) => c.classList.remove("active"));
-        tab.classList.add("active");
-        container
-          .querySelector(`[data-content="${targetTab}"]`)
-          ?.classList.add("active");
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = (btn as HTMLElement).dataset.tab;
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabPanels.forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        container.querySelector(`[data-panel="${tab}"]`)?.classList.add('active');
+        if (tab === 'code') generateCode();
       });
     });
 
-    // Add param row
-    const addParamBtn = container.querySelector(".playground-add-param");
-    const paramsContainer = container.querySelector(".playground-params");
-    addParamBtn?.addEventListener("click", () => {
-      const row = document.createElement("div");
-      row.className = "playground-param-row";
-      row.innerHTML = `
-        <input type="text" placeholder="Key" class="playground-param-key" />
-        <input type="text" placeholder="Value" class="playground-param-value" />
-        <button class="playground-param-remove">×</button>
-      `;
-      paramsContainer?.appendChild(row);
-      row
-        .querySelector(".playground-param-remove")
-        ?.addEventListener("click", () => row.remove());
+    // Response tab switching
+    const responseTabs = container.querySelectorAll('.response-tab');
+    const responsePanels = container.querySelectorAll('.response-body-panel');
+
+    responseTabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = (btn as HTMLElement).dataset.rtab;
+        responseTabs.forEach(b => b.classList.remove('active'));
+        responsePanels.forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        container.querySelector(`[data-rpanel="${tab}"]`)?.classList.add('active');
+      });
     });
 
-    // Add header row
-    const addHeaderBtn = container.querySelector(".playground-add-header");
-    const headersContainer = container.querySelector(".playground-headers");
-    addHeaderBtn?.addEventListener("click", () => {
-      const row = document.createElement("div");
-      row.className = "playground-param-row";
-      row.innerHTML = `
-        <input type="text" placeholder="Header" class="playground-param-key" />
-        <input type="text" placeholder="Value" class="playground-param-value" />
-        <button class="playground-param-remove">×</button>
-      `;
-      headersContainer?.appendChild(row);
-      row
-        .querySelector(".playground-param-remove")
-        ?.addEventListener("click", () => row.remove());
+    // Add row functionality
+    function addRow(editor: Element, key = '', value = '') {
+      const template = editor.querySelector('.kv-row.template');
+      if (!template) return;
+      const row = template.cloneNode(true) as HTMLElement;
+      row.classList.remove('template');
+      row.style.display = '';
+      const keyInput = row.querySelector('.kv-key') as HTMLInputElement;
+      const valueInput = row.querySelector('.kv-value') as HTMLInputElement;
+      if (keyInput) keyInput.value = key;
+      if (valueInput) valueInput.value = value;
+      row.querySelector('.kv-remove')?.addEventListener('click', () => row.remove());
+      editor.appendChild(row);
+    }
+
+    // Initialize with default headers
+    const headersEditor = container.querySelector('.headers-editor');
+    if (headersEditor) {
+      Object.entries(defaultHeaders).forEach(([key, value]) => {
+        addRow(headersEditor, key, value as string);
+      });
+    }
+
+    // Add row buttons
+    container.querySelectorAll('.add-row-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = (btn as HTMLElement).dataset.target;
+        const editor = container.querySelector(`.${target}-editor`);
+        if (editor) addRow(editor);
+      });
     });
 
-    // Remove buttons for initial rows
-    container.querySelectorAll(".playground-param-remove").forEach((btn) => {
-      btn.addEventListener("click", () =>
-        (btn as HTMLElement).closest(".playground-param-row")?.remove(),
-      );
+    // Format JSON button
+    container.querySelector('.format-btn')?.addEventListener('click', () => {
+      const textarea = container.querySelector('.body-textarea') as HTMLTextAreaElement;
+      if (textarea) {
+        try {
+          const formatted = JSON.stringify(JSON.parse(textarea.value), null, 2);
+          textarea.value = formatted;
+        } catch {}
+      }
+    });
+
+    // Collect data
+    function collectData() {
+      const baseUrl = (container.querySelector('.base-url-input') as HTMLInputElement)?.value || '';
+
+      // Params
+      const params: Record<string, string> = {};
+      container.querySelectorAll('.params-editor .kv-row:not(.template)').forEach(row => {
+        const key = (row.querySelector('.kv-key') as HTMLInputElement)?.value;
+        const value = (row.querySelector('.kv-value') as HTMLInputElement)?.value;
+        if (key) params[key] = value || '';
+      });
+
+      // Headers
+      const headers: Record<string, string> = {};
+      container.querySelectorAll('.headers-editor .kv-row:not(.template)').forEach(row => {
+        const key = (row.querySelector('.kv-key') as HTMLInputElement)?.value;
+        const value = (row.querySelector('.kv-value') as HTMLInputElement)?.value;
+        if (key) headers[key] = value || '';
+      });
+
+      // Auth
+      if (auth === 'bearer') {
+        const token = (container.querySelector('.auth-token-input') as HTMLInputElement)?.value;
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+      } else if (auth === 'api-key') {
+        const key = (container.querySelector('.auth-key-input') as HTMLInputElement)?.value;
+        const value = (container.querySelector('.auth-value-input') as HTMLInputElement)?.value;
+        if (key && value) headers[key] = value;
+      } else if (auth === 'basic') {
+        const user = (container.querySelector('.auth-user-input') as HTMLInputElement)?.value;
+        const pass = (container.querySelector('.auth-pass-input') as HTMLInputElement)?.value;
+        if (user) headers['Authorization'] = `Basic ${btoa(`${user}:${pass}`)}`;
+      }
+
+      // Body
+      const body = (container.querySelector('.body-textarea') as HTMLTextAreaElement)?.value || '';
+
+      return { baseUrl, params, headers, body };
+    }
+
+    // Generate code
+    function generateCode() {
+      const { baseUrl, params, headers, body } = collectData();
+      const lang = (container.querySelector('.lang-select') as HTMLSelectElement)?.value || 'curl';
+      const codeEl = container.querySelector('.code-output code');
+      if (!codeEl) return;
+
+      let url = baseUrl + path;
+      const queryString = new URLSearchParams(params).toString();
+      if (queryString) url += '?' + queryString;
+
+      let code = '';
+      if (lang === 'curl') {
+        code = `curl -X ${method} "${url}"`;
+        Object.entries(headers).forEach(([k, v]) => {
+          code += ` \\\n  -H "${k}: ${v}"`;
+        });
+        if (body && ['POST', 'PUT', 'PATCH'].includes(method)) {
+          code += ` \\\n  -d '${body}'`;
+        }
+      } else if (lang === 'javascript') {
+        code = `const response = await fetch("${url}", {
+  method: "${method}",
+  headers: ${JSON.stringify(headers, null, 4)},${body && ['POST', 'PUT', 'PATCH'].includes(method) ? `\n  body: JSON.stringify(${body}),` : ''}
+});
+
+const data = await response.json();
+console.log(data);`;
+      } else if (lang === 'python') {
+        code = `import requests
+
+response = requests.${method.toLowerCase()}(
+    "${url}",
+    headers=${JSON.stringify(headers).replace(/"/g, "'")},${body && ['POST', 'PUT', 'PATCH'].includes(method) ? `\n    json=${body},` : ''}
+)
+
+print(response.json())`;
+      } else if (lang === 'go') {
+        code = `package main
+
+import (
+    "fmt"
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, _ := http.NewRequest("${method}", "${url}", nil)
+${Object.entries(headers).map(([k, v]) => `    req.Header.Set("${k}", "${v}")`).join('\n')}
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    body, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(body))
+}`;
+      }
+
+      codeEl.textContent = code;
+    }
+
+    // Language select change
+    container.querySelector('.lang-select')?.addEventListener('change', generateCode);
+
+    // Copy code
+    container.querySelector('.copy-code-btn')?.addEventListener('click', async () => {
+      const code = container.querySelector('.code-output code')?.textContent;
+      if (code) await navigator.clipboard.writeText(code);
+    });
+
+    // Copy response
+    container.querySelector('.copy-response-btn')?.addEventListener('click', async () => {
+      const response = container.querySelector('.response-body code')?.textContent;
+      if (response) await navigator.clipboard.writeText(response);
     });
 
     // Send request
-    const sendBtn = container.querySelector(".playground-send-btn");
-    sendBtn?.addEventListener("click", async () => {
-      const baseUrl =
-        (container.querySelector(".playground-base-url") as HTMLInputElement)
-          ?.value || "";
-      let url = baseUrl + pathEl;
+    container.querySelector('.send-btn')?.addEventListener('click', async () => {
+      const { baseUrl, params, headers, body } = collectData();
+      let url = baseUrl + path;
+      const queryString = new URLSearchParams(params).toString();
+      if (queryString) url += '?' + queryString;
 
-      // Collect query params
-      const params: URLSearchParams = new URLSearchParams();
-      container
-        .querySelectorAll(".playground-params .playground-param-row")
-        .forEach((row) => {
-          const key = (
-            row.querySelector(".playground-param-key") as HTMLInputElement
-          )?.value;
-          const value = (
-            row.querySelector(".playground-param-value") as HTMLInputElement
-          )?.value;
-          if (key && value) params.append(key, value);
-        });
-      if (params.toString()) url += "?" + params.toString();
-
-      // Collect headers
-      const headers: Record<string, string> = {};
-      container
-        .querySelectorAll(".playground-headers .playground-param-row")
-        .forEach((row) => {
-          const key = (
-            row.querySelector(".playground-param-key") as HTMLInputElement
-          )?.value;
-          const value = (
-            row.querySelector(".playground-param-value") as HTMLInputElement
-          )?.value;
-          if (key && value) headers[key] = value;
-        });
-
-      // Get body
-      const bodyInput = (
-        container.querySelector(".playground-body-input") as HTMLTextAreaElement
-      )?.value;
-
-      const responseContainer = container.querySelector(".playground-response");
-      const statusEl = container.querySelector(".playground-status");
-      const timeEl = container.querySelector(".playground-time");
-      const bodyEl = container.querySelector(".playground-response-body code");
+      const responseSection = container.querySelector('.response-section');
+      const statusBadge = container.querySelector('.status-badge');
+      const timeEl = container.querySelector('.response-time');
+      const sizeEl = container.querySelector('.response-size');
+      const bodyEl = container.querySelector('.response-body code');
+      const headersEl = container.querySelector('.response-headers code');
 
       try {
         const startTime = performance.now();
         const response = await fetch(url, {
-          method: methodEl,
+          method,
           headers,
-          body: ["POST", "PUT", "PATCH"].includes(methodEl || "")
-            ? bodyInput
-            : undefined,
+          body: ['POST', 'PUT', 'PATCH'].includes(method) && body ? body : undefined,
         });
         const endTime = performance.now();
-
         const data = await response.text();
+        const size = new Blob([data]).size;
 
-        responseContainer?.classList.remove("hidden");
-        if (statusEl) {
-          statusEl.textContent = `${response.status} ${response.statusText}`;
-          statusEl.className =
-            "playground-status " + (response.ok ? "success" : "error");
+        responseSection?.classList.remove('hidden');
+
+        if (statusBadge) {
+          statusBadge.textContent = `${response.status} ${response.statusText}`;
+          statusBadge.className = 'status-badge ' + (response.ok ? 'success' : 'error');
         }
         if (timeEl) timeEl.textContent = `${Math.round(endTime - startTime)}ms`;
+        if (sizeEl) sizeEl.textContent = size > 1024 ? `${(size / 1024).toFixed(1)}KB` : `${size}B`;
+
         if (bodyEl) {
           try {
             bodyEl.textContent = JSON.stringify(JSON.parse(data), null, 2);
@@ -388,24 +740,31 @@ const playgroundId = `playground-${Math.random().toString(36).slice(2, 9)}`;
             bodyEl.textContent = data;
           }
         }
+
+        if (headersEl) {
+          const respHeaders: string[] = [];
+          response.headers.forEach((value, key) => {
+            respHeaders.push(`${key}: ${value}`);
+          });
+          headersEl.textContent = respHeaders.join('\n');
+        }
       } catch (err) {
-        responseContainer?.classList.remove("hidden");
-        if (statusEl) {
-          statusEl.textContent = "Error";
-          statusEl.className = "playground-status error";
+        responseSection?.classList.remove('hidden');
+        if (statusBadge) {
+          statusBadge.textContent = 'Error';
+          statusBadge.className = 'status-badge error';
         }
         if (bodyEl) bodyEl.textContent = String(err);
       }
     });
+
+    // Initial code generation
+    generateCode();
   }
 
   // Initialize all playgrounds
-  document
-    .querySelectorAll(".api-playground")
-    .forEach((el) => initPlayground(el as HTMLElement));
-  document.addEventListener("astro:page-load", () => {
-    document
-      .querySelectorAll(".api-playground")
-      .forEach((el) => initPlayground(el as HTMLElement));
+  document.querySelectorAll('.api-playground').forEach(el => initPlayground(el as HTMLElement));
+  document.addEventListener('astro:page-load', () => {
+    document.querySelectorAll('.api-playground').forEach(el => initPlayground(el as HTMLElement));
   });
 </script>

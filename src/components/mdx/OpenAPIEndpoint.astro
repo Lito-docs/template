@@ -1,0 +1,223 @@
+---
+/**
+ * OpenAPIEndpoint - Render a single endpoint from an OpenAPI spec
+ *
+ * Usage:
+ * <OpenAPIEndpoint spec={openApiData} method="GET" path="/users/{id}" />
+ */
+import APIEndpoint from './APIEndpoint.astro';
+import ParamTable from './ParamTable.astro';
+import Param from './Param.astro';
+import ResponseField from './ResponseField.astro';
+import APIPlayground from './APIPlayground.astro';
+import Icon from '../Icon.astro';
+
+import { getEndpoint, type ParsedOpenAPI, type APIParameter } from '../../utils/openapi';
+
+interface Props {
+  spec: ParsedOpenAPI;
+  method: string;
+  path: string;
+  showPlayground?: boolean;
+  baseUrl?: string;
+}
+
+const { spec, method, path, showPlayground = true, baseUrl } = Astro.props;
+
+const endpoint = getEndpoint(spec, method, path);
+if (!endpoint) {
+  throw new Error(`Endpoint ${method} ${path} not found in spec`);
+}
+
+// Get schema type as string
+function getSchemaType(schema: any): string {
+  if (!schema) return 'any';
+  if (schema.type === 'array' && schema.items) {
+    return `${getSchemaType(schema.items)}[]`;
+  }
+  return schema.type || 'object';
+}
+
+// Group parameters by location
+function groupParameters(params: APIParameter[] = []) {
+  return {
+    path: params.filter(p => p.in === 'path'),
+    query: params.filter(p => p.in === 'query'),
+    header: params.filter(p => p.in === 'header'),
+    cookie: params.filter(p => p.in === 'cookie'),
+  };
+}
+
+// Determine auth type
+function getAuthType(): "bearer" | "api-key" | "basic" | "none" {
+  if (!endpoint.security || endpoint.security.length === 0) return "none";
+  return "bearer";
+}
+
+const serverUrl = baseUrl || spec.servers?.[0]?.url || '';
+const paramGroups = groupParameters(endpoint.parameters);
+const auth = getAuthType();
+const successResponse = endpoint.responses?.['200'] || endpoint.responses?.['201'];
+const requestContent = endpoint.requestBody?.content?.['application/json'];
+---
+
+<div class="openapi-endpoint">
+  <APIEndpoint
+    method={endpoint.method as any}
+    path={endpoint.path}
+    description={endpoint.summary || endpoint.description}
+    deprecated={false}
+    auth={auth}
+    baseUrl={serverUrl}
+  >
+    <!-- Path Parameters -->
+    {paramGroups.path.length > 0 && (
+      <ParamTable type="path">
+        {paramGroups.path.map((param) => (
+          <Param
+            name={param.name}
+            type={getSchemaType(param.schema)}
+            required={param.required}
+            enum={param.schema?.enum}
+          >
+            {param.description}
+          </Param>
+        ))}
+      </ParamTable>
+    )}
+
+    <!-- Query Parameters -->
+    {paramGroups.query.length > 0 && (
+      <ParamTable type="query">
+        {paramGroups.query.map((param) => (
+          <Param
+            name={param.name}
+            type={getSchemaType(param.schema)}
+            required={param.required}
+            default={param.schema?.default?.toString()}
+            enum={param.schema?.enum}
+          >
+            {param.description}
+          </Param>
+        ))}
+      </ParamTable>
+    )}
+
+    <!-- Header Parameters -->
+    {paramGroups.header.length > 0 && (
+      <ParamTable type="header">
+        {paramGroups.header.map((param) => (
+          <Param
+            name={param.name}
+            type={getSchemaType(param.schema)}
+            required={param.required}
+          >
+            {param.description}
+          </Param>
+        ))}
+      </ParamTable>
+    )}
+
+    <!-- Request Body -->
+    {requestContent?.schema && (
+      <div class="request-body-section">
+        <h4 class="section-title">
+          <Icon name="lucide:file-input" size={16} />
+          Request Body
+          {endpoint.requestBody?.required && (
+            <span class="required-indicator">required</span>
+          )}
+        </h4>
+        <div class="schema-fields">
+          {requestContent.schema.properties && Object.entries(requestContent.schema.properties).map(([name, prop]: [string, any]) => (
+            <ResponseField
+              name={name}
+              type={getSchemaType(prop)}
+              required={requestContent.schema.required?.includes(name)}
+              nullable={prop.nullable}
+            >
+              {prop.description}
+            </ResponseField>
+          ))}
+        </div>
+      </div>
+    )}
+
+    <!-- Response -->
+    {successResponse && (
+      <div class="response-section">
+        <h4 class="section-title">
+          <Icon name="lucide:file-output" size={16} />
+          Response
+        </h4>
+        {successResponse.content?.['application/json']?.schema && (
+          <div class="schema-fields">
+            {(() => {
+              const respSchema = successResponse.content['application/json'].schema;
+              const props = respSchema.properties || (respSchema.items?.properties);
+              if (!props) return null;
+              return Object.entries(props).map(([name, prop]: [string, any]) => (
+                <ResponseField
+                  name={name}
+                  type={getSchemaType(prop)}
+                  nullable={prop.nullable}
+                >
+                  {prop.description}
+                </ResponseField>
+              ));
+            })()}
+          </div>
+        )}
+      </div>
+    )}
+
+    <!-- Additional content from slot -->
+    <slot />
+  </APIEndpoint>
+
+  <!-- API Playground -->
+  {showPlayground && (
+    <div class="playground-wrapper">
+      <APIPlayground
+        method={endpoint.method as any}
+        path={endpoint.path}
+        baseUrl={serverUrl}
+        auth={auth}
+      />
+    </div>
+  )}
+</div>
+
+<style>
+  @reference "../../styles/global.css";
+
+  .openapi-endpoint {
+    @apply space-y-4;
+  }
+
+  .request-body-section,
+  .response-section {
+    @apply mt-4 pt-4 border-t border-border;
+  }
+
+  .section-title {
+    @apply flex items-center gap-2 text-sm font-semibold text-foreground mb-3;
+  }
+
+  .required-indicator {
+    @apply ml-2 px-1.5 py-0.5 text-[10px] font-semibold uppercase;
+    @apply text-red-600 bg-red-500/10 rounded;
+  }
+
+  :global(.dark) .required-indicator {
+    @apply text-red-400;
+  }
+
+  .schema-fields {
+    @apply rounded-lg border border-border overflow-hidden;
+  }
+
+  .playground-wrapper {
+    @apply mt-4;
+  }
+</style>

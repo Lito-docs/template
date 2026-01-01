@@ -1,44 +1,110 @@
 ---
 /**
- * ParamTable - Display API parameters in a structured table
+ * ParamTable - Display API parameters in a structured, modern table
+ * Redesigned with expandable sections and better visual hierarchy
+ *
  * Usage:
- * <ParamTable>
+ * <ParamTable title="Path Parameters" type="path">
  *   <Param name="id" type="string" required>User ID</Param>
- *   <Param name="limit" type="integer" default="10">Max results</Param>
  * </ParamTable>
  */
+import Icon from '../Icon.astro';
+
 interface Props {
   title?: string;
+  type?: "path" | "query" | "header" | "body" | "cookie";
+  expandable?: boolean;
+  defaultOpen?: boolean;
 }
 
-const { title = "Parameters" } = Astro.props;
+const { title, type, expandable = false, defaultOpen = true } = Astro.props;
+
+const typeConfig: Record<string, { icon: string; color: string }> = {
+  path: { icon: "lucide:route", color: "text-purple-500" },
+  query: { icon: "lucide:search", color: "text-blue-500" },
+  header: { icon: "lucide:file-text", color: "text-amber-500" },
+  body: { icon: "lucide:braces", color: "text-emerald-500" },
+  cookie: { icon: "lucide:cookie", color: "text-orange-500" },
+};
+
+const config = type ? typeConfig[type] : null;
+const displayTitle = title || (type ? `${type.charAt(0).toUpperCase() + type.slice(1)} Parameters` : "Parameters");
+const tableId = `param-table-${Math.random().toString(36).slice(2, 9)}`;
 ---
 
-<div class="param-table">
-  <div class="param-table-header">
-    <h4>{title}</h4>
-  </div>
-  <div class="param-table-content">
-    <slot />
-  </div>
+<div class="param-table not-prose" id={tableId}>
+  {expandable ? (
+    <details open={defaultOpen}>
+      <summary class="param-table-header expandable">
+        <div class="header-content">
+          {config && <Icon name={config.icon} size={16} class={config.color} />}
+          <h4>{displayTitle}</h4>
+        </div>
+        <Icon name="lucide:chevron-down" size={16} class="chevron" />
+      </summary>
+      <div class="param-table-content">
+        <slot />
+      </div>
+    </details>
+  ) : (
+    <>
+      <div class="param-table-header">
+        <div class="header-content">
+          {config && <Icon name={config.icon} size={16} class={config.color} />}
+          <h4>{displayTitle}</h4>
+        </div>
+      </div>
+      <div class="param-table-content">
+        <slot />
+      </div>
+    </>
+  )}
 </div>
 
 <style>
   @reference "../../styles/global.css";
+
   .param-table {
-    @apply my-4 rounded border border-border overflow-hidden;
-    max-width: 100%;
+    @apply my-4 rounded-xl border border-border bg-card overflow-hidden;
+    box-shadow: var(--shadow-xs);
   }
 
   .param-table-header {
-    @apply px-4 py-2 bg-muted/50 border-b border-border;
+    @apply px-4 py-3 border-b border-border;
+    background: linear-gradient(to right, var(--muted), transparent);
+  }
+
+  .param-table-header.expandable {
+    @apply cursor-pointer select-none;
+    @apply hover:bg-muted/50 transition-colors;
+    @apply list-none flex items-center justify-between;
+  }
+
+  .param-table-header.expandable::-webkit-details-marker {
+    display: none;
+  }
+
+  .header-content {
+    @apply flex items-center gap-2;
   }
 
   .param-table-header h4 {
     @apply text-sm font-semibold text-foreground m-0;
   }
 
+  .chevron {
+    @apply text-muted-foreground transition-transform duration-200;
+  }
+
+  details[open] .chevron {
+    transform: rotate(180deg);
+  }
+
   .param-table-content {
     @apply divide-y divide-border;
+  }
+
+  details:not([open]) .param-table-content {
+    @apply hidden;
   }
 </style>

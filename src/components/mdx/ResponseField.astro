@@ -1,53 +1,183 @@
 ---
 /**
- * ResponseField - Display an API response field
- * Usage: <ResponseField name="id" type="string">The user's unique ID</ResponseField>
+ * ResponseField - Display an API response field with nested support
+ * Redesigned with better visual hierarchy and nested field support
+ *
+ * Usage:
+ * <ResponseField name="id" type="string">The user's unique ID</ResponseField>
+ * <ResponseField name="data" type="object" expandable>
+ *   <ResponseField name="name" type="string">User name</ResponseField>
+ * </ResponseField>
  */
+import Icon from '../Icon.astro';
+
 interface Props {
   name: string;
   type?: string;
   nullable?: boolean;
+  required?: boolean;
+  deprecated?: boolean;
+  expandable?: boolean;
+  defaultOpen?: boolean;
 }
 
-const { name, type = 'string', nullable = false } = Astro.props;
+const {
+  name,
+  type = 'string',
+  nullable = false,
+  required = false,
+  deprecated = false,
+  expandable = false,
+  defaultOpen = true
+} = Astro.props;
+
+// Type colors for visual distinction
+const typeColors: Record<string, string> = {
+  string: "text-emerald-600 dark:text-emerald-400",
+  integer: "text-blue-600 dark:text-blue-400",
+  number: "text-blue-600 dark:text-blue-400",
+  boolean: "text-purple-600 dark:text-purple-400",
+  array: "text-amber-600 dark:text-amber-400",
+  object: "text-orange-600 dark:text-orange-400",
+  null: "text-gray-500",
+  datetime: "text-cyan-600 dark:text-cyan-400",
+};
+
+const typeColor = typeColors[type.toLowerCase()] || "text-muted-foreground";
+const fieldId = `response-field-${Math.random().toString(36).slice(2, 9)}`;
 ---
 
-<div class="response-field">
-  <div class="response-field-header">
-    <code class="response-field-name">{name}</code>
-    <span class="response-field-type">
-      {type}
-      {nullable && <span class="response-nullable">| null</span>}
-    </span>
-  </div>
-  <div class="response-field-description">
-    <slot />
-  </div>
+<div class:list={["response-field", { deprecated, expandable }]} id={fieldId}>
+  {expandable ? (
+    <details open={defaultOpen}>
+      <summary class="response-field-header expandable">
+        <div class="field-info">
+          <code class="field-name">{name}</code>
+          <span class="field-type-group">
+            <span class:list={["field-type", typeColor]}>{type}</span>
+            {nullable && <span class="nullable-badge">nullable</span>}
+            {required && <span class="required-dot" title="Required" />}
+          </span>
+        </div>
+        <Icon name="lucide:chevron-down" size={14} class="chevron" />
+      </summary>
+      <div class="response-field-body">
+        <slot />
+      </div>
+    </details>
+  ) : (
+    <>
+      <div class="response-field-header">
+        <div class="field-info">
+          <code class="field-name">{name}</code>
+          <span class="field-type-group">
+            <span class:list={["field-type", typeColor]}>{type}</span>
+            {nullable && <span class="nullable-badge">nullable</span>}
+            {required && <span class="required-dot" title="Required" />}
+          </span>
+          {deprecated && (
+            <span class="deprecated-badge">deprecated</span>
+          )}
+        </div>
+      </div>
+      <div class="response-field-body">
+        <slot />
+      </div>
+    </>
+  )}
 </div>
 
 <style>
   @reference "../../styles/global.css";
+
   .response-field {
     @apply py-3 border-b border-border last:border-b-0;
+    @apply transition-colors;
   }
-  
+
+  .response-field:hover {
+    @apply bg-muted/20;
+  }
+
+  .response-field.deprecated {
+    @apply opacity-60;
+  }
+
+  .response-field.expandable {
+    @apply border-b-0;
+  }
+
   .response-field-header {
-    @apply flex items-center gap-3 mb-1;
+    @apply flex items-center justify-between gap-3;
   }
-  
-  .response-field-name {
-    @apply text-sm font-semibold text-foreground bg-muted px-1.5 py-0.5 rounded;
+
+  .response-field-header.expandable {
+    @apply cursor-pointer select-none list-none;
+    @apply px-3 py-2 -mx-3 rounded-lg;
+    @apply hover:bg-muted/50 transition-colors;
   }
-  
-  .response-field-type {
-    @apply text-xs text-muted-foreground font-mono;
+
+  .response-field-header.expandable::-webkit-details-marker {
+    display: none;
   }
-  
-  .response-nullable {
-    @apply text-amber-500;
+
+  .field-info {
+    @apply flex items-center gap-3 flex-wrap;
   }
-  
-  .response-field-description {
-    @apply text-sm text-muted-foreground pl-0;
+
+  .field-name {
+    @apply text-sm font-semibold text-foreground;
+    @apply bg-muted px-2 py-0.5 rounded-md border border-border;
+  }
+
+  .field-type-group {
+    @apply flex items-center gap-2;
+  }
+
+  .field-type {
+    @apply text-xs font-mono font-medium;
+  }
+
+  .nullable-badge {
+    @apply text-[10px] font-medium px-1.5 py-0.5 rounded;
+    @apply text-amber-600 bg-amber-500/10;
+  }
+
+  :global(.dark) .nullable-badge {
+    @apply text-amber-400;
+  }
+
+  .required-dot {
+    @apply w-1.5 h-1.5 rounded-full bg-red-500;
+  }
+
+  .deprecated-badge {
+    @apply text-[10px] font-medium px-1.5 py-0.5 rounded;
+    @apply text-amber-600 bg-amber-500/10;
+  }
+
+  .chevron {
+    @apply text-muted-foreground transition-transform duration-200;
+  }
+
+  details[open] .chevron {
+    transform: rotate(180deg);
+  }
+
+  .response-field-body {
+    @apply text-sm text-muted-foreground leading-relaxed mt-2;
+  }
+
+  .response-field.expandable .response-field-body {
+    @apply pl-4 ml-2 border-l-2 border-border mt-3;
+  }
+
+  details:not([open]) .response-field-body {
+    @apply hidden;
+  }
+
+  /* Nested response fields */
+  .response-field .response-field {
+    @apply py-2;
   }
 </style>

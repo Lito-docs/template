@@ -1,71 +1,177 @@
 ---
 /**
  * Param - Individual parameter row for ParamTable
- * Usage: <Param name="id" type="string" required>User ID</Param>
+ * Redesigned with better visual hierarchy and type badges
+ *
+ * Usage:
+ * <Param name="id" type="string" required>User ID</Param>
+ * <Param name="limit" type="integer" default="10">Max results</Param>
  */
+import Icon from '../Icon.astro';
+
 interface Props {
   name: string;
   type?: string;
   required?: boolean;
   default?: string;
+  deprecated?: boolean;
+  enum?: string[];
 }
 
-const { name, type = 'string', required = false, default: defaultValue } = Astro.props;
+const {
+  name,
+  type = 'string',
+  required = false,
+  default: defaultValue,
+  deprecated = false,
+  enum: enumValues
+} = Astro.props;
+
+// Type colors for visual distinction
+const typeColors: Record<string, string> = {
+  string: "text-emerald-600 dark:text-emerald-400",
+  integer: "text-blue-600 dark:text-blue-400",
+  number: "text-blue-600 dark:text-blue-400",
+  boolean: "text-purple-600 dark:text-purple-400",
+  array: "text-amber-600 dark:text-amber-400",
+  object: "text-orange-600 dark:text-orange-400",
+  file: "text-pink-600 dark:text-pink-400",
+  datetime: "text-cyan-600 dark:text-cyan-400",
+};
+
+const typeColor = typeColors[type.toLowerCase()] || "text-muted-foreground";
 ---
 
-<div class="param-row">
-  <div class="param-info">
-    <div class="param-name-row">
+<div class:list={["param-row", { deprecated }]}>
+  <div class="param-header">
+    <div class="param-name-group">
       <code class="param-name">{name}</code>
       {required && (
-        <span class="param-required">required</span>
+        <span class="required-badge">
+          <Icon name="lucide:asterisk" size={10} />
+          required
+        </span>
+      )}
+      {deprecated && (
+        <span class="deprecated-badge">deprecated</span>
       )}
     </div>
-    <span class="param-type">{type}</span>
-    {defaultValue && (
-      <span class="param-default">Default: <code>{defaultValue}</code></span>
-    )}
+    <div class="param-meta">
+      <span class:list={["param-type", typeColor]}>{type}</span>
+      {defaultValue && (
+        <span class="param-default">
+          = <code>{defaultValue}</code>
+        </span>
+      )}
+    </div>
   </div>
-  <div class="param-description">
-    <slot />
+
+  <div class="param-body">
+    <div class="param-description">
+      <slot />
+    </div>
+    {enumValues && enumValues.length > 0 && (
+      <div class="param-enum">
+        <span class="enum-label">Allowed values:</span>
+        <div class="enum-values">
+          {enumValues.map((val) => (
+            <code class="enum-value">{val}</code>
+          ))}
+        </div>
+      </div>
+    )}
   </div>
 </div>
 
 <style>
   @reference "../../styles/global.css";
+
   .param-row {
-    @apply px-4 py-3 flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4;
+    @apply px-4 py-4 transition-colors;
   }
-  
-  .param-info {
-    @apply flex flex-wrap items-center gap-2 sm:w-48 sm:flex-shrink-0;
+
+  .param-row:hover {
+    @apply bg-muted/30;
   }
-  
-  .param-name-row {
+
+  .param-row.deprecated {
+    @apply opacity-60;
+  }
+
+  .param-header {
+    @apply flex flex-wrap items-start justify-between gap-2 mb-2;
+  }
+
+  .param-name-group {
+    @apply flex items-center gap-2 flex-wrap;
+  }
+
+  .param-name {
+    @apply text-sm font-semibold text-foreground;
+    @apply bg-muted px-2 py-1 rounded-md border border-border;
+  }
+
+  .required-badge {
+    @apply inline-flex items-center gap-0.5 px-1.5 py-0.5;
+    @apply text-[10px] font-semibold uppercase tracking-wide;
+    @apply text-red-600 bg-red-500/10 rounded;
+  }
+
+  :global(.dark) .required-badge {
+    @apply text-red-400;
+  }
+
+  .deprecated-badge {
+    @apply px-1.5 py-0.5 text-[10px] font-semibold uppercase;
+    @apply text-amber-600 bg-amber-500/10 rounded;
+  }
+
+  :global(.dark) .deprecated-badge {
+    @apply text-amber-400;
+  }
+
+  .param-meta {
     @apply flex items-center gap-2;
   }
-  
-  .param-name {
-    @apply text-sm font-semibold text-foreground bg-muted px-1.5 py-0.5 rounded;
-  }
-  
-  .param-required {
-    @apply text-[10px] font-medium text-red-500 uppercase;
-  }
-  
+
   .param-type {
-    @apply text-xs text-muted-foreground font-mono;
+    @apply text-xs font-mono font-medium;
   }
-  
+
   .param-default {
     @apply text-xs text-muted-foreground;
   }
-  
+
   .param-default code {
-    @apply text-xs bg-muted px-1 py-0.5 rounded;
+    @apply text-xs bg-muted px-1.5 py-0.5 rounded border border-border;
   }
-  
+
+  .param-body {
+    @apply space-y-2;
+  }
+
   .param-description {
-    @apply text-sm text-muted-foreground flex-1;
+    @apply text-sm text-muted-foreground leading-relaxed;
+  }
+
+  .param-enum {
+    @apply flex flex-wrap items-center gap-2 mt-2;
+  }
+
+  .enum-label {
+    @apply text-xs text-muted-foreground font-medium;
+  }
+
+  .enum-values {
+    @apply flex flex-wrap gap-1;
+  }
+
+  .enum-value {
+    @apply text-xs px-1.5 py-0.5 rounded;
+    @apply bg-primary-50 text-primary-700 border border-primary-200;
+  }
+
+  :global(.dark) .enum-value {
+    @apply bg-primary-900/30 text-primary-300 border-primary-700;
   }
 </style>
