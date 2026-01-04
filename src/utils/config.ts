@@ -94,6 +94,24 @@ export function getNavigation() {
     return configCache?.navigation;
 }
 
+/**
+ * Get locale-specific sidebar navigation
+ * Looks for navigation.sidebar.{locale} first, falls back to navigation.sidebar
+ */
+export function getLocalizedSidebar(locale: string, defaultLocale: string) {
+    const navigation = configCache?.navigation as any;
+    if (!navigation) return [];
+
+    // Check for locale-specific sidebar (e.g., "sidebar.es", "sidebar.fr")
+    const localeSidebarKey = `sidebar.${locale}`;
+    if (navigation[localeSidebarKey] && Array.isArray(navigation[localeSidebarKey])) {
+        return navigation[localeSidebarKey];
+    }
+
+    // Fall back to default sidebar
+    return navigation.sidebar || [];
+}
+
 export function getBranding() {
     return configCache?.branding;
 }
