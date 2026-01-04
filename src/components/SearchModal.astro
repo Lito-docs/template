@@ -4,7 +4,28 @@
  * Professional search UI with animations and enhanced UX
  * Uses Pagefind for static search (must build first to index content)
  */
+import { getI18nConfig, getTranslations, getLocaleFromPath } from '../utils/i18n';
+
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const currentPath = Astro.url.pathname;
+
+// Get i18n translations
+const i18nConfig = await getI18nConfig();
+const translations = await getTranslations();
+const currentLocale = getLocaleFromPath(currentPath, i18nConfig.locales) || i18nConfig.defaultLocale;
+const t = translations[currentLocale] || translations.en || {};
+
+// Translation strings
+const searchPlaceholder = t['search.placeholder'] || 'Search documentation...';
+const searchTitle = t['search.title'] || 'Search the documentation';
+const searchHint = t['search.hint'] || 'Start typing to find what you\'re looking for';
+const searchNoResults = t['search.noResults'] || 'No results found';
+const searchNoResultsHint = t['search.noResultsHint'] || 'Try different keywords or check your spelling';
+const searchUnavailable = t['search.unavailable'] || 'Search unavailable';
+const searchBuildHint = t['search.buildHint'] || 'Run build to generate the search index';
+const navNavigate = t['search.navigate'] || 'Navigate';
+const navSelect = t['search.select'] || 'Select';
+const navClose = t['search.close'] || 'Close';
 ---
 
 <div
@@ -13,6 +34,13 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   role="dialog"
   aria-modal="true"
   aria-labelledby="search-title"
+  data-search-placeholder={searchPlaceholder}
+  data-search-title={searchTitle}
+  data-search-hint={searchHint}
+  data-search-no-results={searchNoResults}
+  data-search-no-results-hint={searchNoResultsHint}
+  data-search-unavailable={searchUnavailable}
+  data-search-build-hint={searchBuildHint}
 >
   <div class="search-backdrop"></div>
   <div class="search-container">
@@ -38,7 +66,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
         <input
           id="search-input"
           type="search"
-          placeholder="Search documentation..."
+          placeholder={searchPlaceholder}
           class="search-input"
           autocomplete="off"
           spellcheck="false"
@@ -69,10 +97,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
             <path d="m21 21-4.3-4.3"></path>
           </svg>
         </div>
-        <p class="search-empty-text">Search the documentation</p>
-        <p class="search-empty-hint">
-          Start typing to find what you're looking for
-        </p>
+        <p class="search-empty-text">{searchTitle}</p>
+        <p class="search-empty-hint">{searchHint}</p>
       </div>
     </div>
 
@@ -81,15 +107,15 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       <div class="search-hints">
         <div class="search-hint">
           <kbd>↑</kbd><kbd>↓</kbd>
-          <span>Navigate</span>
+          <span>{navNavigate}</span>
         </div>
         <div class="search-hint">
           <kbd>↵</kbd>
-          <span>Select</span>
+          <span>{navSelect}</span>
         </div>
         <div class="search-hint">
           <kbd>ESC</kbd>
-          <span>Close</span>
+          <span>{navClose}</span>
         </div>
       </div>
       <div class="search-powered">
@@ -456,6 +482,14 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     const resultsContainer = document.getElementById("search-results");
     const loadingEl = document.getElementById("search-loading");
 
+    // Get translations from data attributes
+    const searchTitle = modal?.dataset.searchTitle || 'Search the documentation';
+    const searchHint = modal?.dataset.searchHint || 'Start typing to find what you\'re looking for';
+    const searchNoResults = modal?.dataset.searchNoResults || 'No results found';
+    const searchNoResultsHint = modal?.dataset.searchNoResultsHint || 'Try different keywords or check your spelling';
+    const searchUnavailable = modal?.dataset.searchUnavailable || 'Search unavailable';
+    const searchBuildHint = modal?.dataset.searchBuildHint || 'Run build to generate the search index';
+
     // Try to load Pagefind
     try {
       const pagefindPath = base + "/pagefind/pagefind.js";
@@ -497,8 +531,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
               <path d="m21 21-4.3-4.3"/>
             </svg>
           </div>
-          <p class="search-empty-text">Search the documentation</p>
-          <p class="search-empty-hint">Start typing to find what you're looking for</p>
+          <p class="search-empty-text">${searchTitle}</p>
+          <p class="search-empty-hint">${searchHint}</p>
         </div>
       `;
     }
@@ -514,8 +548,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
               <path d="M8 8l6 6M14 8l-6 6"/>
             </svg>
           </div>
-          <p class="search-no-results-text">No results for "${query}"</p>
-          <p class="search-no-results-hint">Try different keywords or check your spelling</p>
+          <p class="search-no-results-text">${searchNoResults} "${query}"</p>
+          <p class="search-no-results-hint">${searchNoResultsHint}</p>
         </div>
       `;
     }
@@ -680,8 +714,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
                     <path d="M12 16v-4M12 8h.01"/>
                   </svg>
                 </div>
-                <p class="search-no-results-text">Search unavailable</p>
-                <p class="search-no-results-hint">Run <code style="font-size: 11px; padding: 2px 6px; background: var(--muted); border-radius: 4px;">pnpm build</code> to generate the search index</p>
+                <p class="search-no-results-text">${searchUnavailable}</p>
+                <p class="search-no-results-hint">${searchBuildHint}</p>
               </div>
             `;
           }
