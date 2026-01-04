@@ -1,0 +1,174 @@
+---
+/**
+ * VersionBanner - Shows a warning banner when viewing non-latest version docs
+ */
+import Icon from './Icon.astro';
+import { getConfigFile } from '../utils/config';
+import {
+  getVersionFromPath,
+  getDefaultVersion,
+  isDefaultVersion,
+  formatBannerMessage,
+  buildVersionedPath,
+  type VersioningConfig,
+} from '../utils/versioning';
+
+const config = await getConfigFile();
+const versioningConfig = config.versioning as VersioningConfig | undefined;
+
+// Don't render if versioning not enabled or banner disabled
+if (!versioningConfig?.enabled || versioningConfig.versionBanner?.enabled === false) {
+  return null;
+}
+
+const currentPath = Astro.url.pathname;
+const currentVersion = getVersionFromPath(currentPath, versioningConfig);
+const defaultVersion = getDefaultVersion(versioningConfig);
+
+// Don't show banner on default/latest version
+if (!currentVersion || isDefaultVersion(currentVersion, versioningConfig)) {
+  return null;
+}
+
+// Get banner message
+const defaultMessage = 'You are viewing documentation for {version}. See the latest version.';
+const message = versioningConfig.versionBanner?.message || defaultMessage;
+const formattedMessage = formatBannerMessage(message, currentVersion, defaultVersion);
+
+// Get link to latest version
+const latestLink = defaultVersion
+  ? buildVersionedPath(currentPath, defaultVersion, versioningConfig)
+  : '/';
+---
+
+<div class="version-banner" role="alert">
+  <div class="banner-content">
+    <Icon name="lucide:alert-triangle" size={18} class="banner-icon" />
+    <p class="banner-message">
+      {formattedMessage.split('latest version')[0]}
+      <a href={latestLink} class="banner-link">
+        latest version
+        <Icon name="lucide:arrow-right" size={14} />
+      </a>
+    </p>
+  </div>
+  <button class="banner-close" aria-label="Dismiss banner" id="version-banner-close">
+    <Icon name="lucide:x" size={16} />
+  </button>
+</div>
+
+<script>
+  const banner = document.querySelector('.version-banner');
+  const closeBtn = document.getElementById('version-banner-close');
+
+  if (closeBtn && banner) {
+    closeBtn.addEventListener('click', () => {
+      banner.classList.add('dismissed');
+      // Store dismissal in session storage (per session, not permanent)
+      const currentVersion = banner.getAttribute('data-version');
+      if (currentVersion) {
+        sessionStorage.setItem(`version-banner-dismissed-${currentVersion}`, 'true');
+      }
+    });
+
+    // Check if already dismissed this session
+    const currentVersion = window.location.pathname.split('/')[1];
+    if (sessionStorage.getItem(`version-banner-dismissed-${currentVersion}`)) {
+      banner.classList.add('dismissed');
+    }
+  }
+</script>
+
+<style>
+  .version-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, var(--warning-light), transparent);
+    border: 1px solid var(--warning);
+    border-left: 4px solid var(--warning);
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+  }
+
+  .version-banner.dismissed {
+    display: none;
+  }
+
+  .banner-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+  }
+
+  .banner-icon {
+    color: var(--warning);
+    flex-shrink: 0;
+  }
+
+  .banner-message {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--foreground);
+    line-height: 1.5;
+  }
+
+  .banner-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--primary-600);
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .banner-link:hover {
+    color: var(--primary-700);
+    text-decoration: underline;
+  }
+
+  :global(.dark) .banner-link {
+    color: var(--primary-400);
+  }
+
+  :global(.dark) .banner-link:hover {
+    color: var(--primary-300);
+  }
+
+  .banner-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem;
+    background: transparent;
+    border: none;
+    border-radius: 0.25rem;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .banner-close:hover {
+    background: var(--muted);
+    color: var(--foreground);
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .version-banner {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .banner-close {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+    }
+  }
+</style>
