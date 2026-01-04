@@ -1,0 +1,52 @@
+---
+/**
+ * Changelog - Timeline-style changelog container
+ *
+ * Usage:
+ * <Changelog>
+ *   <ChangelogEntry version="2.0.0" date="2024-01-15" type="major">
+ *     <ChangelogItem type="added">New feature description</ChangelogItem>
+ *     <ChangelogItem type="fixed">Bug fix description</ChangelogItem>
+ *   </ChangelogEntry>
+ * </Changelog>
+ */
+---
+
+<div class="changelog-container not-prose">
+  <slot />
+</div>
+
+<style>
+  .changelog-container {
+    position: relative;
+    margin: 2rem 0;
+    padding-left: 2.5rem;
+  }
+
+  /* Timeline line */
+  .changelog-container::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(
+      to bottom,
+      var(--primary-500),
+      var(--primary-300),
+      var(--primary-200)
+    );
+    border-radius: 1px;
+  }
+
+  /* Dark mode adjustment */
+  :global(.dark) .changelog-container::before {
+    background: linear-gradient(
+      to bottom,
+      var(--primary-400),
+      var(--primary-600),
+      var(--primary-700)
+    );
+  }
+</style>
