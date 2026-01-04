@@ -6,9 +6,10 @@ import Icon from './Icon.astro';
 interface Props {
   group: SidebarGroup;
   currentPath: string;
+  localizeHref?: (href: string) => string;
 }
 
-const { group, currentPath } = Astro.props;
+const { group, currentPath, localizeHref = (href: string) => href } = Astro.props;
 
 // Generate a unique ID for this group (for localStorage key)
 const groupId = group.label.toLowerCase().replace(/\s+/g, '-');
@@ -18,7 +19,7 @@ const isActive = (item: SidebarItem): boolean => {
     return item.items.some((subItem) => isActive(subItem));
   }
   const itemPath = item.href || `/${item.slug}`;
-  const fullItemPath = createLink(itemPath);
+  const fullItemPath = createLink(localizeHref(itemPath));
   return isLinkActive(fullItemPath, currentPath);
 };
 
@@ -81,7 +82,7 @@ const methodColors: Record<string, string> = {
             <ul class="sidebar-subgroup-items">
               {item.items.map((subItem) => {
                 const subItemHref = subItem.href || `/${subItem.slug}`;
-                const fullSubHref = createLink(subItemHref);
+                const fullSubHref = createLink(localizeHref(subItemHref));
                 const subActive = isActive(subItem);
                 return (
                   <li>
@@ -108,7 +109,7 @@ const methodColors: Record<string, string> = {
 
       // Regular item (no nested items)
       const itemHref = item.href || `/${item.slug}`;
-      const fullHref = createLink(itemHref);
+      const fullHref = createLink(localizeHref(itemHref));
       const active = isActive(item);
       return (
         <li>
