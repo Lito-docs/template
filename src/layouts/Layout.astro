@@ -4,8 +4,10 @@ import Sidebar from '../components/Sidebar.astro';
 import MobileNav from '../components/MobileNav.astro';
 import SearchModal from '../components/SearchModal.astro';
 import SEOHead from '../components/SEOHead.astro';
+import CopyPageMenu from '../components/CopyPageMenu.astro';
 import { getConfigFile } from '../utils/config';
 import { createLink } from '../utils/url';
+import { getI18nConfig, getLocaleFromPath, isRTL } from '../utils/i18n';
 import type { SEOFrontmatter } from '../types/seo';
 import '../styles/global.css';
 
@@ -15,15 +17,22 @@ interface Props {
   showSidebar?: boolean;
   frontmatter?: SEOFrontmatter;
   breadcrumbs?: Array<{ name: string; href?: string }>;
+  lang?: string;
 }
 
 const { title, description, showSidebar = true, frontmatter, breadcrumbs } = Astro.props;
 const config = await getConfigFile();
 const currentPath = Astro.url.pathname;
+
+// Get i18n configuration
+const i18nConfig = await getI18nConfig();
+const detectedLocale = getLocaleFromPath(currentPath, i18nConfig.locales);
+const currentLocale = Astro.props.lang || detectedLocale || i18nConfig.defaultLocale;
+const isRtl = isRTL(currentLocale);
 ---
 
 <!doctype html>
-<html lang="en" class="dark">
+<html lang={currentLocale} dir={isRtl ? 'rtl' : 'ltr'} class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -44,7 +53,7 @@ const currentPath = Astro.url.pathname;
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet" />
 
     <meta name="generator" content={Astro.generator} />
-    
+
     <!-- Theme initialization -->
     <script is:inline>
       const savedTheme = localStorage.getItem('theme');
@@ -64,18 +73,12 @@ const currentPath = Astro.url.pathname;
       {showSidebar && <Sidebar />}
       <slot />
     </div>
+
+    <CopyPageMenu />
     
-    <style is:global define:vars={{
-      primaryColor: config.theme.primaryColor || '#fafafa',
-      accentColor: config.theme.accentColor || '#71717a',
-    }}>
+    <style is:global>
       @reference '../styles/global.css';
 
-      :root {
-        --color-primary: var(--primaryColor);
-        --color-accent: var(--accentColor);
-      }
-      
       code, pre {
         font-family: 'Fira Code', 'Courier New', monospace !important;
       }
