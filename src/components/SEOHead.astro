@@ -240,3 +240,16 @@ additionalMetaTags.push({
 {breadcrumbJsonLd && (
   <script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
 )}
+
+{/* Google Analytics */}
+{config.integrations?.analytics?.provider === 'google-analytics' && config.integrations.analytics.measurementId && (
+  <>
+    <script type="text/partytown" src={`https://www.googletagmanager.com/gtag/js?id=${config.integrations.analytics.measurementId}`}></script>
+    <script type="text/partytown" define:vars={{ id: config.integrations.analytics.measurementId }}>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', id);
+    </script>
+  </>
+)}
