@@ -3,11 +3,37 @@
  * MobileNav - Mobile navigation drawer
  * Triggered by hamburger menu in Header
  */
-import { getConfigFile } from '../utils/config';
-import { createLink } from '../utils/url';
+import { getConfigFile, getLocalizedSidebar } from '../utils/config';
+import { getI18nConfig, getLocaleFromPath } from '../utils/i18n';
+import { createLink, isLinkActive } from '../utils/url';
 
 const config = await getConfigFile();
-const { sidebar } = config.navigation;
+const i18nConfig = await getI18nConfig();
+const currentPath = Astro.url.pathname;
+
+// Get current locale from URL
+const currentLocale = getLocaleFromPath(currentPath, i18nConfig.locales) || i18nConfig.defaultLocale;
+
+// Get locale-specific sidebar (falls back to default if not found)
+const sidebar = getLocalizedSidebar(currentLocale, i18nConfig.defaultLocale);
+
+// For localized content, we need to adjust hrefs to include locale prefix
+const localizeHref = (href: string) => {
+  if (currentLocale === i18nConfig.defaultLocale) {
+    return href;
+  }
+  // Add locale prefix if not already present
+  if (!href.startsWith(`/${currentLocale}/`) && !href.startsWith('http')) {
+    return `/${currentLocale}${href.startsWith('/') ? href : '/' + href}`;
+  }
+  return href;
+};
+
+// Check if a link is active
+const isActive = (href: string) => {
+  const fullHref = createLink(localizeHref(href));
+  return isLinkActive(fullHref, currentPath);
+};
 ---
 
 <div id="mobile-nav" class="mobile-nav">
@@ -22,19 +48,28 @@ const { sidebar } = config.navigation;
         </svg>
       </button>
     </div>
-    
+
     <nav class="mobile-nav-content">
-      {sidebar.map((group) => (
+      {sidebar.map((group: any) => (
         <div class="mobile-nav-group">
           <div class="mobile-nav-group-title">{group.label}</div>
           <ul class="mobile-nav-list">
-            {group.items?.map((item) => (
-              <li>
-                <a href={createLink(item.href || `/${item.slug}`)} class="mobile-nav-link">
-                  {item.label}
-                </a>
-              </li>
-            ))}
+            {group.items?.map((item: any) => {
+              const href = item.href || `/${item.slug}`;
+              const fullHref = createLink(localizeHref(href));
+              const active = isActive(href);
+              return (
+                <li>
+                  <a
+                    href={fullHref}
+                    class:list={['mobile-nav-link', { 'mobile-nav-link-active': active }]}
+                    aria-current={active ? 'page' : undefined}
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         </div>
       ))}
@@ -89,6 +124,15 @@ const { sidebar } = config.navigation;
   .mobile-nav-link {
     @apply block px-3 py-2 text-sm text-muted-foreground rounded;
     @apply hover:text-foreground hover:bg-accent transition-colors;
+  }
+
+  .mobile-nav-link-active {
+    @apply text-primary-600 bg-primary-50 font-medium;
+    @apply border-l-2 border-primary-500;
+  }
+
+  :global(.dark) .mobile-nav-link-active {
+    @apply text-primary-400 bg-primary-950/50;
   }
 </style>
 
