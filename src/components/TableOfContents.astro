@@ -1,12 +1,22 @@
 ---
 // TableOfContents component - displays headings from the page
+import { getI18nConfig, getTranslations, getLocaleFromPath } from '../utils/i18n';
+
+const currentPath = Astro.url.pathname;
+const i18nConfig = await getI18nConfig();
+const translations = await getTranslations();
+const currentLocale = getLocaleFromPath(currentPath, i18nConfig.locales) || i18nConfig.defaultLocale;
+const t = translations[currentLocale] || translations.en || {};
+
+const tocTitle = t['toc.title'] || 'On this page';
+const tocEmpty = t['toc.empty'] || 'No headings';
 ---
 
 <aside class="toc">
   <div class="toc-header">
-    <span class="toc-title">On This Page</span>
+    <span class="toc-title">{tocTitle}</span>
   </div>
-  <nav class="toc-nav" id="toc-nav">
+  <nav class="toc-nav" id="toc-nav" data-toc-empty={tocEmpty}>
     {/* TOC will be populated by client-side script */}
   </nav>
 </aside>
@@ -76,16 +86,19 @@
   function initTOC() {
     const article = document.querySelector('.docs-prose');
     const tocNav = document.getElementById('toc-nav');
-    
+
     if (!article || !tocNav) return;
-    
+
+    // Get empty text from data attribute
+    const emptyText = tocNav.dataset.tocEmpty || 'No headings';
+
     // Clear existing
     tocNav.innerHTML = '';
-    
+
     const headings = Array.from(article.querySelectorAll('h2'));
-    
+
     if (headings.length === 0) {
-      tocNav.innerHTML = '<p class="toc-empty">No headings</p>';
+      tocNav.innerHTML = `<p class="toc-empty">${emptyText}</p>`;
       return;
     }
     
