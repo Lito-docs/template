@@ -21,14 +21,14 @@ if (config.navigation.sidebar) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <SEO
-        title="SuperDocs - The Open Source Mintlify Alternative"
+        title="Lito - The Open Source Mintlify Alternative"
         description="Beautiful documentation sites from Markdown. Built on Astro. Free and self-hosted."
         canonical={siteUrl}
         openGraph={{
             basic: {
-                title: "SuperDocs - The Open Source Mintlify Alternative",
+                title: "Lito - The Open Source Mintlify Alternative",
                 type: "website",
                 image: siteUrl + "/og-image.png",
                 url: siteUrl,
@@ -40,19 +40,19 @@ if (config.navigation.sidebar) {
         }}
         twitter={{
             card: "summary_large_image",
-            title: "SuperDocs - The Open Source Mintlify Alternative",
+            title: "Lito - The Open Source Mintlify Alternative",
             description: "Beautiful documentation sites from Markdown. Built on Astro. Free and self-hosted.",
             image: siteUrl + "/og-image.png",
         }}
         extend={{
             meta: [
                 { name: "keywords", content: "documentation, markdown, astro, open source, mintlify alternative, static site generator" },
-                { name: "author", content: "SuperDocs" },
+                { name: "author", content: "Lito" },
                 { name: "theme-color", content: "#000000" },
             ],
         }}
     />
-    
+
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <style>
         * {
@@ -67,7 +67,7 @@ if (config.navigation.sidebar) {
             --text-secondary-light: #666666;
             --text-tertiary-light: #999999;
             --border-light: #e5e5e5;
-            
+
             --bg-dark: #000000;
             --text-primary-dark: #ffffff;
             --text-secondary-dark: #a0a0a0;
@@ -209,12 +209,12 @@ if (config.navigation.sidebar) {
             min-height: 100vh;
             display: flex;
             align-items: center;
-            padding: 250px 0;
+            padding: 200px 0;
         }
 
         /* Hero Section */
         .hero {
-            padding-top: 300px;
+            padding-top: 250px;
         }
 
         .hero h1 {
@@ -472,7 +472,7 @@ if (config.navigation.sidebar) {
             }
 
             section {
-                padding: 150px 0;
+                padding: 120px 0;
             }
 
             .hero {
@@ -539,12 +539,12 @@ if (config.navigation.sidebar) {
 <body>
     <!-- Header -->
     <header class="header">
-        <div class="logo">SuperDocs</div>
+        <div class="logo">Lito</div>
         <nav class="nav">
             <a href="#philosophy">Philosophy</a>
             <a href="#features">Features</a>
-            <a href="https://github.com/devrohit06/super-docs" target="_blank">GitHub</a>
-            <a href={docsUrl} class="docs-btn">Go to Docs</a>
+            <a href="https://github.com/devrohit06/lito" target="_blank">GitHub</a>
+            <a href={docsUrl} class="docs-btn">Docs →</a>
             <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="5"></circle>
@@ -568,15 +568,15 @@ if (config.navigation.sidebar) {
     <section class="hero">
         <div class="container">
             <div class="fade-in">
-                <h1>Documentation<br>should be<br>effortless</h1>
+                <h1>Beautiful docs,<br>zero effort</h1>
             </div>
             <div class="fade-in">
                 <p class="subtitle">The open-source Mintlify alternative</p>
             </div>
             <div class="fade-in">
                 <p class="description">
-                    SuperDocs is a modern documentation generator that combines the simplicity of zero-config tools with the power of Astro. 
-                    Write in Markdown, ship as static HTML. Beautiful by default, customizable when needed.
+                    Transform your Markdown into stunning documentation sites in seconds.
+                    Powered by Astro. No config needed. Just write and ship.
                 </p>
             </div>
         </div>
@@ -588,8 +588,8 @@ if (config.navigation.sidebar) {
             <span class="section-label">Philosophy</span>
             <blockquote>
                 <p class="quote-text">
-                    "The best documentation tool is the one you'll actually use. 
-                    Everything else is just friction."
+                    "Documentation shouldn't cost $150/month. It shouldn't require
+                    a PhD in static site generators. It should just work."
                 </p>
                 <p class="quote-attribution">— Design principle</p>
             </blockquote>
@@ -602,13 +602,13 @@ if (config.navigation.sidebar) {
             <div class="philosophy">
                 <h2>Built on principles,<br>not compromises</h2>
                 <p>
-                    Most documentation tools force you to choose between simplicity and power. 
+                    Most documentation tools force you to choose between simplicity and power.
                     Hosted platforms are easy but expensive. Custom builds are flexible but time-consuming.
                 </p>
                 <p>
-                    SuperDocs refuses this false dichotomy. It's a CLI tool that generates static sites from Markdown, 
-                    powered by Astro under the hood. Start with a simple JSON config. Customize with MDX when you need to. 
-                    Eject to full Astro when you're ready.
+                    Lito refuses this false dichotomy. Start with Markdown and a simple JSON config.
+                    Add MDX components when you need them. Eject to full Astro when you're ready for complete control.
+                    Progressive complexity, on your terms.
                 </p>
                 <p>
                     Self-hosted. Open source. Free forever.
@@ -621,50 +621,65 @@ if (config.navigation.sidebar) {
     <section id="features">
         <div class="container">
             <span class="section-label">What you get</span>
-            
+
             <div class="feature-grid">
                 <div class="feature-item">
-                    <h3>Zero to docs in seconds</h3>
+                    <h3>One command to start</h3>
                     <p>
-                        Point SuperDocs at your Markdown files. Add a simple JSON config. 
-                        Run one command. Your documentation site is ready.
+                        Point Lito at your Markdown files. Run one command.
+                        Your documentation site is live. No configuration required.
                     </p>
                     <div class="code-mockup">
-                        <div class="code-line">$ npm install -g @devrohit06/superdocs</div>
-                        <div class="code-line">$ superdocs dev --input ./docs</div>
-                        <div class="code-line code-comment">✓ Dev server running at http://localhost:4321</div>
+                        <div class="code-line">{"$ npx @litodocs/cli dev --input ./docs"}</div>
+                        <div class="code-line code-comment">{"✓ Server running at localhost:4321"}</div>
                     </div>
                 </div>
 
                 <div class="feature-item">
-                    <h3>Astro-powered performance</h3>
+                    <h3>Zero JavaScript by default</h3>
                     <p>
-                        Built on Astro's cutting-edge architecture. Ship zero JavaScript by default. 
-                        Optimal SEO. Lightning-fast page loads. Islands architecture when you need interactivity.
+                        Built on Astro's cutting-edge architecture. Ship pure HTML and CSS.
+                        100 Lighthouse scores. Add interactive islands only when you need them.
                     </p>
                 </div>
 
                 <div class="feature-item">
-                    <h3>Progressive customization</h3>
+                    <h3>20+ built-in components</h3>
                     <p>
-                        Start with Markdown. Add MDX components when needed. Use the full Astro API. 
-                        Or eject the entire project to customize every detail. Your choice at every step.
+                        Tabs, accordions, callouts, cards, code groups, API endpoints, and more.
+                        All auto-imported and ready to use in your MDX files.
                     </p>
                     <div class="code-mockup">
-                        <div class="code-line code-comment">// In your .mdx file</div>
-                        <div class="code-line">import &#123; MyComponent &#125; from './components'</div>
-                        <div class="code-line">&#160;</div>
-                        <div class="code-line">&#35; My Documentation</div>
-                        <div class="code-line">&#160;</div>
-                        <div class="code-line">&#60;MyComponent /&#62;</div>
+                        <div class="code-line code-comment">{"// Just use them - no imports needed"}</div>
+                        <div class="code-line">{"# Getting Started"}</div>
+                        <div class="code-line">&nbsp;</div>
+                        <div class="code-line">{"<Card title=\"Quick Start\">"}</div>
+                        <div class="code-line">{"  Follow these steps to get started."}</div>
+                        <div class="code-line">{"</Card>"}</div>
                     </div>
                 </div>
 
                 <div class="feature-item">
                     <h3>OpenAPI integration</h3>
                     <p>
-                        Generate beautiful API documentation from OpenAPI specs. 
-                        Automatic endpoint pages. Type-safe examples. Interactive request builders.
+                        Generate beautiful API documentation from your OpenAPI specs.
+                        Automatic endpoint pages. Interactive request builders. Type-safe examples.
+                    </p>
+                </div>
+
+                <div class="feature-item">
+                    <h3>Full-text search</h3>
+                    <p>
+                        Powered by Pagefind. Instant, offline-capable search across all your docs.
+                        No external services. No API keys. Just works.
+                    </p>
+                </div>
+
+                <div class="feature-item">
+                    <h3>Eject when you're ready</h3>
+                    <p>
+                        Outgrow the defaults? Run one command to get a full Astro project.
+                        Complete control over every file. Zero lock-in, ever.
                     </p>
                 </div>
             </div>
@@ -674,30 +689,30 @@ if (config.navigation.sidebar) {
     <!-- CTA Section -->
     <section class="cta">
         <div class="container">
-            <h2>Start writing,<br>not configuring</h2>
+            <h2>Ready to build<br>something beautiful?</h2>
             <div class="cta-buttons">
-                <a href="/getting-started/installation" class="btn btn-primary">Get Started</a>
-                <a href="https://github.com/devrohit06/super-docs" class="btn btn-secondary">View on GitHub</a>
+                <a href={docsUrl} class="btn btn-primary">Read the Docs</a>
+                <a href="https://github.com/devrohit06/lito" class="btn btn-secondary" target="_blank">View on GitHub</a>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
     <footer>
-        <p>Built with SuperDocs. Open source and free forever.</p>
+        <p>Built with Lito. Open source and free forever.</p>
     </footer>
 
     <script is:inline>
         // Theme toggle
         const themeToggle = document.getElementById('themeToggle');
         const body = document.body;
-        
+
         // Check for saved theme preference or default to light mode
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
             body.classList.add('dark-mode');
         }
-        
+
         themeToggle.addEventListener('click', () => {
             body.classList.toggle('dark-mode');
             const isDark = body.classList.contains('dark-mode');
@@ -721,15 +736,15 @@ if (config.navigation.sidebar) {
         // Update chapter indicator on scroll
         const chapter = document.querySelector('.chapter');
         const sections = ['Hero', 'Quote', 'Philosophy', 'Features', 'Start'];
-        
+
         window.addEventListener('scroll', () => {
             const scrollPosition = window.scrollY + window.innerHeight / 2;
             const sectionElements = document.querySelectorAll('section');
-            
+
             sectionElements.forEach((section, index) => {
                 const sectionTop = section.offsetTop;
                 const sectionBottom = sectionTop + section.offsetHeight;
-                
+
                 if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
                     const chapterNum = ['I', 'II', 'III', 'IV', 'V'][index] || 'I';
                     chapter.textContent = `Chapter ${chapterNum}`;
