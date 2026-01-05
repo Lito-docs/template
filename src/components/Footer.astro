@@ -8,12 +8,12 @@ const { footer } = config;
 const currentYear = new Date().getFullYear();
 
 // Default values
-const layout = footer.layout ?? 'full';
-const showBranding = footer.showBranding ?? true;
-const showVersion = footer.showVersion ?? true;
+const layout = footer?.layout ?? 'full';
+const showBranding = footer?.showBranding ?? true;
+const showVersion = footer?.showVersion ?? true;
 
 // Process copyright text with year placeholder
-const copyrightText = footer.copyright
+const copyrightText = footer?.copyright
   ? footer.copyright.replace('{year}', currentYear.toString())
   : `© ${currentYear} ${config.metadata.name}`;
 
@@ -32,23 +32,23 @@ const socialIcons: Record<string, string> = {
 };
 
 // Get social entries
-const socialEntries = footer.socials ? Object.entries(footer.socials).filter(([_, url]) => url) : [];
-const hasLinks = footer.links && footer.links.length > 0;
-const hasBottomLinks = footer.bottomLinks && footer.bottomLinks.length > 0;
+const socialEntries = footer?.socials ? Object.entries(footer.socials).filter(([_, url]) => url) : [];
+const hasLinks = footer?.links && footer.links.length > 0;
+const hasBottomLinks = footer?.bottomLinks && footer.bottomLinks.length > 0;
 
 // Get logo config (fallback to branding logo)
-const footerLogo = footer.logo ?? (config.branding?.logo ? {
-  src: config.branding.logo.light,
+const footerLogo = footer?.logo ?? (config.branding?.logo ? {
+  src: config.branding.logo.light || config.branding.logo.dark,
   href: config.branding.logo.href || '/',
   alt: config.metadata.name,
   height: 32
 } : null);
 ---
 
-<footer class:list={["footer-container mt-16 py-12 bg-background", `footer-${layout}`]}>
-  <div class="w-full px-6 mx-auto">
+<footer class:list={["footer-container", `footer-${layout}`]}>
+  <div class="footer-inner">
 
-    {/* Full Layout: Logo/tagline on left, links in middle, socials on right */}
+    {/* Full Layout */}
     {layout === 'full' && (
       <div class="footer-full-layout">
         {/* Brand column */}
@@ -68,10 +68,10 @@ const footerLogo = footer.logo ?? (config.branding?.logo ? {
               {config.metadata.name}
             </a>
           )}
-          {footer.tagline && (
+          {footer?.tagline && (
             <p class="footer-tagline">{footer.tagline}</p>
           )}
-          {/* Socials under brand on mobile, separate on desktop */}
+          {/* Socials under brand on mobile */}
           {socialEntries.length > 0 && (
             <div class="footer-socials-mobile">
               {socialEntries.map(([platform, url]) => (
@@ -134,7 +134,7 @@ const footerLogo = footer.logo ?? (config.branding?.logo ? {
       </div>
     )}
 
-    {/* Compact Layout: Just bottom bar style */}
+    {/* Compact Layout */}
     {layout === 'compact' && (
       <div class="footer-compact-layout">
         {socialEntries.length > 0 && (
@@ -155,11 +155,11 @@ const footerLogo = footer.logo ?? (config.branding?.logo ? {
       </div>
     )}
 
-    {/* Centered Layout: Everything centered */}
+    {/* Centered Layout */}
     {layout === 'centered' && (
       <div class="footer-centered-layout">
         {footerLogo && (
-          <a href={createLink(footerLogo.href || '/')} class="footer-logo-link mb-4">
+          <a href={createLink(footerLogo.href || '/')} class="footer-logo-link">
             <img
               src={footerLogo.src}
               alt={footerLogo.alt || config.metadata.name}
@@ -168,8 +168,8 @@ const footerLogo = footer.logo ?? (config.branding?.logo ? {
             />
           </a>
         )}
-        {footer.tagline && (
-          <p class="footer-tagline text-center mb-6">{footer.tagline}</p>
+        {footer?.tagline && (
+          <p class="footer-tagline footer-tagline-centered">{footer.tagline}</p>
         )}
 
         {hasLinks && (
@@ -214,25 +214,24 @@ const footerLogo = footer.logo ?? (config.branding?.logo ? {
       </div>
     )}
 
-    {/* Bottom bar - always shown */}
+    {/* Bottom Bar - Always shown */}
     <div class="footer-bottom">
       <div class="footer-bottom-content">
         <div class="footer-copyright">
           <span>{copyrightText}</span>
-          {showBranding && (
-            <>
-              <span class="footer-separator">•</span>
-              <span>Built with <a href="https://github.com/Lito-docs/cli" class="footer-lito-link">Lito</a></span>
-            </>
-          )}
           {showVersion && config.metadata.version && (
             <>
               <span class="footer-separator">•</span>
               <span>v{config.metadata.version}</span>
             </>
           )}
+          {showBranding && (
+            <>
+              <span class="footer-separator">•</span>
+              <span>Built with <a href="https://github.com/Lito-docs/cli" class="footer-lito-link" target="_blank" rel="noopener noreferrer">Lito</a></span>
+            </>
+          )}
         </div>
-
         {hasBottomLinks && (
           <div class="footer-bottom-links">
             {footer.bottomLinks.map((link, index) => (
@@ -252,21 +251,50 @@ const footerLogo = footer.logo ?? (config.branding?.logo ? {
 
 <style>
   .footer-container {
+    margin-top: 4rem;
+    padding: 3rem 0 1.5rem;
     border-top: 1px solid var(--border);
+    background-color: var(--background);
+  }
+
+  .footer-inner {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .footer-inner {
+      padding: 0 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .footer-inner {
+      padding: 0 2rem;
+    }
   }
 
   /* Full Layout */
   .footer-full-layout {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 2rem;
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
   }
 
   @media (min-width: 768px) {
     .footer-full-layout {
-      grid-template-columns: 1.5fr 2fr auto;
+      display: grid;
+      grid-template-columns: 1fr 2fr;
       gap: 3rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .footer-full-layout {
+      grid-template-columns: 1fr 2fr auto;
     }
   }
 
@@ -301,26 +329,27 @@ const footerLogo = footer.logo ?? (config.branding?.logo ? {
     color: var(--muted-foreground);
     font-size: 0.875rem;
     margin: 0;
-    max-width: 280px;
-    line-height: 1.5;
+    max-width: 300px;
+    line-height: 1.6;
+  }
+
+  .footer-tagline-centered {
+    text-align: center;
+    margin: 0.5rem 0 1.5rem;
+    max-width: 400px;
   }
 
   /* Links Grid */
   .footer-links-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
+    gap: 1.5rem;
   }
 
   @media (min-width: 640px) {
     .footer-links-grid {
       grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .footer-links-grid {
-      grid-template-columns: repeat(4, 1fr);
+      gap: 2rem;
     }
   }
 
@@ -335,7 +364,7 @@ const footerLogo = footer.logo ?? (config.branding?.logo ? {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--foreground);
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
   }
 
   .footer-link-list {
@@ -344,7 +373,7 @@ const footerLogo = footer.logo ?? (config.branding?.logo ? {
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.625rem;
+    gap: 0.5rem;
   }
 
   .footer-link {
@@ -363,11 +392,12 @@ const footerLogo = footer.logo ?? (config.branding?.logo ? {
   /* Social Links */
   .footer-socials-mobile {
     display: flex;
-    gap: 0.75rem;
-    margin-top: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     .footer-socials-mobile {
       display: none;
     }
@@ -375,30 +405,30 @@ const footerLogo = footer.logo ?? (config.branding?.logo ? {
 
   .footer-socials-desktop {
     display: none;
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: flex-end;
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     .footer-socials-desktop {
       display: flex;
-      flex-direction: row;
-      gap: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: flex-end;
     }
   }
 
   .footer-socials-inline {
     display: flex;
     justify-content: center;
-    gap: 1rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
     margin-bottom: 1.5rem;
   }
 
   .footer-socials-centered {
     display: flex;
     justify-content: center;
-    gap: 1rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
     margin-top: 1.5rem;
   }
 
@@ -441,7 +471,14 @@ const footerLogo = footer.logo ?? (config.branding?.logo ? {
     flex-wrap: wrap;
     justify-content: center;
     gap: 2rem;
-    margin-top: 1rem;
+  }
+
+  @media (max-width: 640px) {
+    .footer-links-centered {
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
   }
 
   .footer-link-section-centered {

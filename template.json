@@ -1,0 +1,37 @@
+{
+  "$schema": "../lito/src/schema/template-manifest.json",
+  "name": "lito-theme-default",
+  "version": "1.0.0",
+  "description": "The official default theme for Lito documentation sites. Professional, Mintlify-inspired design with full feature support.",
+  "author": "Lito-docs",
+  "repository": "https://github.com/Lito-docs/template",
+  "coreSchemaVersion": "1.0.0",
+  "extensions": {
+    "footer": {
+      "enabled": true,
+      "layouts": ["full", "compact", "centered"],
+      "socials": true,
+      "linkSections": true
+    },
+    "theme": {
+      "modes": ["light", "dark", "auto"],
+      "customColors": true,
+      "customFonts": true
+    },
+    "landing": {
+      "enabled": true,
+      "hero": true,
+      "features": true
+    },
+    "integrations": {
+      "analytics": ["google", "plausible", "fathom"],
+      "feedback": true,
+      "copyPage": true
+    },
+    "versioning": {
+      "enabled": true,
+      "versionBanner": true
+    }
+  },
+  "extensionSchema": "schema.json"
+}

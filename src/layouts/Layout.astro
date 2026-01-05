@@ -4,7 +4,6 @@ import Sidebar from '../components/Sidebar.astro';
 import MobileNav from '../components/MobileNav.astro';
 import SearchModal from '../components/SearchModal.astro';
 import SEOHead from '../components/SEOHead.astro';
-import CopyPageMenu from '../components/CopyPageMenu.astro';
 import { getConfigFile } from '../utils/config';
 import { createLink } from '../utils/url';
 import { getI18nConfig, getLocaleFromPath, isRTL } from '../utils/i18n';
@@ -73,8 +72,6 @@ const isRtl = isRTL(currentLocale);
       {showSidebar && <Sidebar />}
       <slot />
     </div>
-
-    <CopyPageMenu />
     
     <style is:global>
       @reference '../styles/global.css';

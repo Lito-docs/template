@@ -1,45 +1,105 @@
-export interface DocsConfig {
-    metadata: {
-        name: string;
-        description: string;
-        url: string;
-        version: string;
-    };
-    branding: {
-        logo: {
-            light: string;
-            dark: string;
-            href: string;
-        };
-        favicon: string;
-        colors: {
-            primary: string;
-            secondary: string;
-            accent: string;
-            background: string;
-            text: string;
-        };
-        fonts: {
-            body: string;
-            code: string;
-        };
-    };
-    theme: {
-        mode: 'auto' | 'light' | 'dark';
-        defaultDark: boolean;
-        primaryColor: string;
-        accentColor: string;
-    };
-    navigation: {
-        navbar: NavbarConfig;
-        sidebar: SidebarGroup[];
-    };
-    footer: FooterConfig;
-    search: SearchConfig;
-    integrations: IntegrationsConfig;
-    seo: SEOConfig;
-    landing?: LandingConfig;
+/**
+ * Core Configuration Types
+ *
+ * These types define the PORTABLE configuration that works across ALL Lito templates.
+ * Any template must support these options for template swapping to work.
+ */
+
+// ============================================================================
+// CORE CONFIG (Portable across all templates)
+// ============================================================================
+
+export interface CoreConfig {
+    metadata: MetadataConfig;
+    branding?: BrandingConfig;
+    navigation?: NavigationConfig;
+    search?: SearchConfig;
+    seo?: SEOConfig;
     i18n?: I18nConfig;
+    assets?: AssetsConfig;
+}
+
+export interface MetadataConfig {
+    /** Site name - REQUIRED */
+    name: string;
+    /** Site description */
+    description?: string;
+    /** Production URL */
+    url?: string;
+    /** Documentation version */
+    version?: string;
+}
+
+export interface BrandingConfig {
+    logo?: LogoConfig;
+    favicon?: string;
+    colors?: {
+        /** Primary brand color */
+        primary?: string;
+    };
+}
+
+export interface LogoConfig {
+    light?: string;
+    dark?: string;
+    href?: string;
+}
+
+export interface NavigationConfig {
+    navbar?: NavbarConfig;
+    sidebar?: SidebarGroup[];
+}
+
+export interface NavbarConfig {
+    links?: NavLink[];
+    cta?: {
+        label: string;
+        href: string;
+        type?: string;
+    };
+}
+
+export interface NavLink {
+    label: string;
+    href: string;
+    icon?: string;
+}
+
+export interface SidebarGroup {
+    label: string;
+    icon?: string;
+    items: SidebarItem[];
+}
+
+export interface SidebarItem {
+    label: string;
+    slug?: string;
+    href?: string;
+    icon?: string;
+    /** HTTP method for API endpoints */
+    method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    /** Nested items for sub-groups */
+    items?: SidebarItem[];
+}
+
+export interface SearchConfig {
+    enabled?: boolean;
+    provider?: 'local' | 'algolia';
+    placeholder?: string;
+}
+
+export interface SEOConfig {
+    ogImage?: string;
+    twitterHandle?: string;
+    twitterSite?: string;
+    defaultAuthor?: string;
+    defaultKeywords?: string[];
+    enableJsonLd?: boolean;
+    organizationName?: string;
+    organizationLogo?: string;
+    articleType?: 'TechArticle' | 'Article';
+    autoCanonical?: boolean;
+    enableBreadcrumbs?: boolean;
 }
 
 export interface I18nConfig {
@@ -49,6 +109,70 @@ export interface I18nConfig {
         prefixDefaultLocale?: boolean;
     };
     translations?: Record<string, Record<string, string>>;
+}
+
+export interface AssetsConfig {
+    images?: string;
+    css?: string;
+    static?: string;
+}
+
+// ============================================================================
+// EXTENSION CONFIG (Theme-specific, may not work with all templates)
+// ============================================================================
+
+/**
+ * Theme Extensions - features that are specific to the default theme
+ * or other templates that explicitly support them.
+ *
+ * ⚠️ Using these options may cause issues when swapping templates!
+ */
+export interface ThemeExtensions {
+    /** Extended footer options */
+    footer?: FooterConfig;
+    /** Extended theme options */
+    theme?: ThemeConfig;
+    /** Landing page configuration */
+    landing?: LandingConfig;
+    /** Third-party integrations */
+    integrations?: IntegrationsConfig;
+    /** Documentation versioning */
+    versioning?: VersioningConfig;
+}
+
+export interface FooterConfig {
+    logo?: {
+        src: string;
+        alt?: string;
+        href?: string;
+        height?: number;
+    };
+    tagline?: string;
+    copyright?: string;
+    showBranding?: boolean;
+    showVersion?: boolean;
+    layout?: 'full' | 'compact' | 'centered';
+    socials?: Record<string, string>;
+    links?: FooterSection[];
+    bottomLinks?: FooterLink[];
+}
+
+export interface FooterSection {
+    title: string;
+    items: FooterLink[];
+}
+
+export interface FooterLink {
+    label: string;
+    href: string;
+    external?: boolean;
+}
+
+export interface ThemeConfig {
+    mode?: 'auto' | 'light' | 'dark';
+    defaultDark?: boolean;
+    primaryColor?: string;
+    accentColor?: string;
 }
 
 export interface LandingConfig {
@@ -70,82 +194,6 @@ export interface LandingConfig {
     }>;
 }
 
-export interface NavbarConfig {
-    links: NavLink[];
-    cta: {
-        label: string;
-        href: string;
-        type: string;
-    };
-}
-
-export interface NavLink {
-    label: string;
-    href: string;
-    icon?: string;
-}
-
-export interface SidebarGroup {
-    label: string;
-    icon?: string;
-    items: SidebarItem[];
-}
-
-export interface SidebarItem {
-    label: string;
-    slug?: string;
-    href?: string;
-    icon?: string;
-    /** HTTP method for API endpoints (GET, POST, PUT, PATCH, DELETE) */
-    method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-    /** Nested items for sub-groups */
-    items?: SidebarItem[];
-}
-
-export interface FooterConfig {
-    /** Footer logo configuration (uses branding logo if not specified) */
-    logo?: {
-        src: string;
-        alt?: string;
-        href?: string;
-        height?: number;
-    };
-    /** Company tagline or description displayed under the logo */
-    tagline?: string;
-    /** Custom copyright text. Use {year} placeholder for current year */
-    copyright?: string;
-    /** Show 'Built with Lito' branding in the footer (default: true) */
-    showBranding?: boolean;
-    /** Show the documentation version in the footer (default: true) */
-    showVersion?: boolean;
-    /** Footer layout variant: 'full', 'compact', or 'centered' */
-    layout?: 'full' | 'compact' | 'centered';
-    /** Social media links. Keys are platform names, values are URLs */
-    socials?: Record<string, string>;
-    /** Footer link sections organized in columns */
-    links?: FooterSection[];
-    /** Additional links shown in the bottom bar (e.g., Privacy Policy, Terms) */
-    bottomLinks?: FooterLink[];
-}
-
-export interface FooterSection {
-    title: string;
-    items: FooterLink[];
-}
-
-export interface FooterLink {
-    label: string;
-    href: string;
-    /** Open in new tab */
-    external?: boolean;
-}
-
-export interface SearchConfig {
-    enabled: boolean;
-    provider: 'local' | 'algolia';
-    placeholder: string;
-}
-
 export interface IntegrationsConfig {
     analytics?: {
         provider: string;
@@ -154,29 +202,109 @@ export interface IntegrationsConfig {
     feedback?: {
         enabled: boolean;
     };
+    copyPage?: CopyPageConfig;
 }
 
-export interface SEOConfig {
-    /** Default Open Graph image for pages without a custom ogImage */
-    ogImage: string;
-    /** Twitter handle for twitter:creator meta tag */
-    twitterHandle: string;
-    /** Twitter site handle (defaults to twitterHandle if not specified) */
-    twitterSite?: string;
-    /** Default author name for article metadata */
-    defaultAuthor?: string;
-    /** Default keywords applied to all pages */
-    defaultKeywords?: string[];
-    /** Enable JSON-LD structured data (default: true) */
-    enableJsonLd?: boolean;
-    /** Organization name for JSON-LD publisher info */
-    organizationName?: string;
-    /** Organization logo URL for JSON-LD */
-    organizationLogo?: string;
-    /** Default article type: 'TechArticle' for technical docs, 'Article' for general */
-    articleType?: 'TechArticle' | 'Article';
-    /** Generate canonical URLs automatically (default: true) */
-    autoCanonical?: boolean;
-    /** Enable breadcrumb JSON-LD (default: true) */
-    enableBreadcrumbs?: boolean;
+export interface CopyPageConfig {
+    enabled?: boolean;
+    position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+    aiProviders?: Array<{
+        name: string;
+        label: string;
+        icon: string;
+    }>;
+    contextPrompt?: string;
+}
+
+export interface VersioningConfig {
+    enabled: boolean;
+    defaultVersion?: string;
+    versions?: Array<{
+        id: string;
+        label: string;
+        path: string;
+        deprecated?: boolean;
+    }>;
+    versionBanner?: {
+        enabled?: boolean;
+        message?: string;
+    };
+}
+
+// ============================================================================
+// FULL DOCS CONFIG (Core + Extensions)
+// ============================================================================
+
+/**
+ * Full documentation configuration.
+ *
+ * Use `CoreConfig` when building template-agnostic tools.
+ * Use `DocsConfig` when you need access to all features.
+ */
+export interface DocsConfig extends CoreConfig, ThemeExtensions {
+    // Core fields with full typing for convenience
+    metadata: MetadataConfig;
+    branding: BrandingConfig & {
+        colors?: {
+            primary?: string;
+            secondary?: string;
+            accent?: string;
+            background?: string;
+            text?: string;
+        };
+        fonts?: {
+            body?: string;
+            code?: string;
+        };
+    };
+    navigation: NavigationConfig & {
+        navbar: NavbarConfig;
+        sidebar: SidebarGroup[];
+    };
+    search: SearchConfig & {
+        enabled: boolean;
+        provider: 'local' | 'algolia';
+        placeholder: string;
+    };
+}
+
+// ============================================================================
+// TEMPLATE MANIFEST
+// ============================================================================
+
+export interface TemplateManifest {
+    name: string;
+    version: string;
+    description?: string;
+    author?: string;
+    repository?: string;
+    coreSchemaVersion: string;
+    extensions?: {
+        footer?: {
+            enabled?: boolean;
+            layouts?: string[];
+            socials?: boolean;
+            linkSections?: boolean;
+        };
+        theme?: {
+            modes?: ('light' | 'dark' | 'auto')[];
+            customColors?: boolean;
+            customFonts?: boolean;
+        };
+        landing?: {
+            enabled?: boolean;
+            hero?: boolean;
+            features?: boolean;
+        };
+        integrations?: {
+            analytics?: string[];
+            feedback?: boolean;
+            copyPage?: boolean;
+        };
+        versioning?: {
+            enabled?: boolean;
+            versionBanner?: boolean;
+        };
+    };
+    extensionSchema?: string;
 }
